@@ -183,6 +183,7 @@ int main(int argc, char **argv)
       {
         particle_number = config_setting_length(setting);
         int i;
+        char i_str[20]; // buffer for converting i to string
         for(i = 0; i < particle_number; ++i)
         {
           printf("Single particle 1:\n");
@@ -229,7 +230,8 @@ int main(int argc, char **argv)
             buffer[this_row_start_index] = buffer[pre_row_start_index] + dt;
             rk4vec ( buffer[pre_row_start_index], 4, buffer+pre_row_start_index+1, buffer+this_row_start_index+1, dt, dy_over_dt );
           }
-          h5status = H5LTmake_dataset_double (ofile_h5id, "particle1", 2, dims,(const double*)buffer);
+          sprintf(i_str, "%d", i);
+          h5status = H5LTmake_dataset_double (ofile_h5id, i_str, 2, dims ,(const double*)buffer);
           free(buffer);
           free(dims);
         }
