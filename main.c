@@ -140,7 +140,7 @@ int main(int argc, char **argv)
     fprintf(stdout,"t0 = %f by default!\n", t0);
   }
   if(config_lookup_float(&cfg, "t1",&t1))
-    fprintf(stdout,"t1 = %f\n", t0);
+    fprintf(stdout,"t1 = %f\n", t1);
   else
   {
     t1 = default_t1;
@@ -205,22 +205,33 @@ int main(int argc, char **argv)
           buffer = (double*)malloc(dims[1]*dims[0]*sizeof *buffer);
           buffer[0] = t0;
 
-          double xi0;
-          if(config_setting_lookup_float(single_particle, "xi0", buffer+1))
-            fprintf(stdout,"Particle # %d xi0 = %f\n", i, xi0);
+          double x_beta = A/sqrt(sqrt(gamma0)); // Amplitude of x oscillation
+          double zeta0;
+          // Set buffer[1] to be initial value of zeta = zeta0
+          if(config_setting_lookup_float(single_particle, "zeta0", buffer+1))
+            fprintf(stdout,"Particle # %d zeta0 = %f\n", i, zeta0);
           else
-            fprintf(stderr,"Particle # %d xi0 not given!\n", i);
-          //buffer[1] = 0.0;
+            fprintf(stderr,"Particle # %d zeta0 not given!\n", i);
           double phase0;
           if(config_setting_lookup_float(single_particle, "phase0", &phase0))
+          {
             fprintf(stdout,"Particle # %d phase0 = %f\n", i, phase0);
+            phase0 *= M_PI/180; // Transform degree to radian
+          }
           else
-            fprintf(stderr,"Particle # %d phase0 not given!\n", i);
+          {
+            fprintf(stderr,"Particle # %d phase0 not given! Set to default 0.\n", i);
+            phase0 = 0.;
+          }
+          // Shift zeta to its oscillation phase
+          buffer[1] -= Square(x_beta)/sqrt(gamma0*2)/8*sin(phase0*2);
 
-
-          buffer[2] = A/sqrt(sqrt(gamma0))*cos(phase0);
-          buffer[3] = sqrt(Square(gamma0)-1.0);
-          buffer[4] = A*sqrt(sqrt(gamma0))*sin(phase0);
+          // Set buffer[2] to be initial value of x
+          buffer[2] = x_beta*sin(phase0);
+          // Set buffer[3] to be initial value of pz
+          buffer[3] = sqrt(Square(gamma0)-1.0-Square(x_beta)*gamma0*(4+cos(phase0*2))/16);
+          // Set buffer[4] to be initial value of px
+          buffer[4] = gamma0*x_beta*cos(phase0)/sqrt(gamma0*2);
 
           // j is the index for rows
           for(j = 1; j <= track_arry_lenth; j++)

@@ -18,15 +18,15 @@ void f_rad2 ( const double * p, const double * dp_over_dt, double * f )
 
 double * dy_over_dt ( double t, const double * y )
 /* Create and set the array of dy_overe_dt. Programmer should release this pointer after use.
- * y[0] is x1-beta_w * t, where x1 is the longitudinal position, and beta_w is the speed of the wake.
- * y[1] is x2.
- * y[2] is p1.
- * y[3] ps p2.
+ * y[0] is z-beta_w * t, where z is the longitudinal position, and beta_w is the speed of the wake.
+ * y[1] is x.
+ * y[2] is pz.
+ * y[3] ps px.
  */
 {
   double * out_buffer;
   const double gamma = sqrt(1.+Square(y[2])+Square(y[3]));
-  const double RelTol = 1.e-5;//Relative Tolarance for modifying dp/dt using the RR force
+  const double RelTol = 1.e-6;//Relative Tolarance for modifying dp/dt using the RR force
   const double extreme_small = 1.e-24;//Set a extreme small number
 
   out_buffer = ( double * ) malloc ( 4 * sizeof * out_buffer);//programmer should release this pointer outside this function
@@ -35,11 +35,12 @@ double * dy_over_dt ( double t, const double * y )
   // set p1 dot and p2 dot with external force first.
   out_buffer[2] = y[0]/(-2.);
   out_buffer[3] = y[1]/(-2.);
+  //out_buffer[3] = y[1]/(-4.)*(1.+y[2]/gamma); // The actual magnetic force is a bit smaller than electric force
 
   int i;
   if(if_RR)
   {
-    const int max_cycles = 3;
+    const int max_cycles = 10;
     double f_ext[2]={out_buffer[2],out_buffer[3]};
     double tmp_f_RR[2];
     double new_tmp_f_RR[2];
