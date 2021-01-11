@@ -15,6 +15,8 @@
 #include "equations.h"
 
 extern int if_RR;
+extern int if_RR1;
+extern int if_RR2;
 extern double re_times_2_over_3;
 extern double beta_w;
 #endif /* ifndef __INCLUDES_H */
