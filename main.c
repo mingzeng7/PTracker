@@ -5,6 +5,8 @@
 
 #include "includes.h"
 int if_RR; // if_RR == 0 will turn off all the radiation reactions
+int if_RR1; // if_RR1 == 0 will turn off the 1st term of radiation reactions
+int if_RR2; // if_RR2 == 0 will turn off the 2nd term of radiation reactions
 double re_times_2_over_3; // Classical electron radius normalized to k_p^{-1}, times 2/3
 double beta_w;
 
@@ -43,6 +45,28 @@ int main(int argc, char **argv)
   {
     if_RR = default_if_RR;
     printf("if_RR =  %d using the default value!\n", if_RR);
+  }
+
+  //Reading and set if_RR1
+  if(config_lookup_bool(&cfg, "if_RR1", &if_RR1))
+  {
+    printf("if_RR1 =  %d\n", if_RR1);
+  }
+  else
+  {
+    if_RR1 = default_if_RR1;
+    printf("if_RR1 =  %d using the default value!\n", if_RR1);
+  }
+
+  //Reading and set if_RR2
+  if(config_lookup_bool(&cfg, "if_RR2", &if_RR2))
+  {
+    printf("if_RR2 =  %d\n", if_RR2);
+  }
+  else
+  {
+    if_RR2 = default_if_RR2;
+    printf("if_RR2 =  %d using the default value!\n", if_RR2);
   }
 
   //Reading kp and set re
@@ -181,12 +205,12 @@ int main(int argc, char **argv)
           int track_arry_lenth = ((int) (t_duration / dt))+1;
           fprintf(stdout,"track_arry_lenth =  %d\n", track_arry_lenth);
           double * buffer;
-          int column_length = 7; // The columns are t, zeta, x, pz, px, d pz/dt, d px/dt
+          int column_length = 5; // The columns are t, zeta, x, pz, px
           hsize_t * dims;
           dims=(hsize_t *)malloc(2*sizeof *dims);
           dims[0]=track_arry_lenth;
           dims[1]=column_length;
-          
+
           buffer = (double*)malloc(dims[1]*dims[0]*sizeof *buffer);
           buffer[0] = t0;
 
@@ -218,19 +242,15 @@ int main(int argc, char **argv)
           buffer[3] = sqrt(Square(gamma0)-1.0-Square(x_1)*gamma0*(4+cos(phase0*2))/16);
           // Set buffer[4] to be initial value of px with phase shift
           buffer[4] = gamma0*x_1*cos(phase0)/r_omega_beta;
-          // Set buffer[5] to be initial value of dpz/dt = -zeta/2
-          buffer[5] = -0.5*buffer[1];
-          // Set buffer[6] to be initial value of dpx/dt = -x/2
-          buffer[6] = -0.5*buffer[2]-re_times_2_over_3/2.*buffer[4];
 
           // j is the index for rows
           int j;
-          for(j = 1; j <= track_arry_lenth; j++)
+          for(j = 1; j < track_arry_lenth; j++)
           {
             int pre_row_start_index = (j-1)*column_length;
             int this_row_start_index = j*column_length;
             buffer[this_row_start_index] = buffer[pre_row_start_index] + dt;
-            rk4vec ( buffer[pre_row_start_index], 6, buffer+pre_row_start_index+1, buffer+this_row_start_index+1, dt, dy_over_dt );
+            rk4vec ( buffer[pre_row_start_index], 4, buffer+pre_row_start_index+1, buffer+this_row_start_index+1, dt, dy_over_dt );
           }
           sprintf(i_str, "%d", i);
           h5status = H5LTmake_dataset_double (ofile_h5id, i_str, 2, dims ,(const double*)buffer);

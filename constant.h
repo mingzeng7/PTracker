@@ -21,6 +21,8 @@ extern const unsigned int	default_seed;
 
 //physical parameters
 extern const int	default_if_RR; //default bool for whether calculate radiation reaction
+extern const int	default_if_RR1; //default bool for whether calculate radiation reaction term 1
+extern const int	default_if_RR2; //default bool for whether calculate radiation reaction term 2
 extern const double	re_SI;
 extern const double	default_kp_SI;
 extern const double	default_gamma_w;

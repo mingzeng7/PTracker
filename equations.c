@@ -1,7 +1,7 @@
 #include "equations.h"
 
-void f_rad2 ( const double * p, const double * dp_over_dt, double * f )
-/* Radiation reaction force of the second term.
+void f_rad ( const double * p, const double * dp_over_dt, double * f )
+/* Radiation reaction force. For 1st radiation term turned on (if_RR1=1), estimate d^2 p/dt^2 by d f^ext/dt.
    Input:
    p: momentum
       p[0] is pz
@@ -10,14 +10,30 @@ void f_rad2 ( const double * p, const double * dp_over_dt, double * f )
       dp_over_dt[0] is dpz/dt
       dp_over_dt[1] is dpx/dt
    Output:
-   f: Pointer to an array of two doubles, containing the estimated 2nd term of the radiation reaction
+   f: Pointer to an array of two doubles, containing the estimated radiation reactions.
 */
 {
   const double gamma = sqrt(1.+Square(p[0])+Square(p[1]));
-  const double gamma_dot = p[0]/gamma*dp_over_dt[0]+p[1]/gamma*dp_over_dt[1];
-  const double common_term = re_times_2_over_3 * gamma * (Square(gamma_dot) - Square(dp_over_dt[0]) - Square(dp_over_dt[1]));
-  f[0] = common_term * p[0];
-  f[1] = common_term * p[1];
+  const double gamma_dot = (p[0]*dp_over_dt[0]+p[1]*dp_over_dt[1])/gamma;
+  if(if_RR1)
+  {
+    // 1st term of radiation reactions
+    f[0] = re_times_2_over_3 * (gamma_dot*dp_over_dt[0] + .5*(beta_w*gamma - p[0]));
+    f[1] = re_times_2_over_3 * (gamma_dot*dp_over_dt[1] - .5*p[1]);
+  }
+  else
+  {
+    f[0] = 0.;
+    f[1] = 0.;
+  }
+
+  if(if_RR2)
+  {
+    // 2nd term of radiation reactions
+    const double common_term = re_times_2_over_3 * gamma * (Square(gamma_dot) - Square(dp_over_dt[0]) - Square(dp_over_dt[1]));
+    f[0] += common_term * p[0];
+    f[1] += common_term * p[1];
+  }
   return;
 }
 
@@ -29,35 +45,53 @@ double * dy_over_dt ( double t, const double * y )
       y[1] is x.
       y[2] is pz.
       y[3] ps px.
-      y[4] is dpz/dt.
-      y[5] ps dpx/dt.
    Output:
       Pointer to an array of doubles, containing the results of dy_over_dt. Programmer should release this memory allocation after use.
  */
 {
   double * out_buffer;
   const double gamma = sqrt(1.+Square(y[2])+Square(y[3]));
-  const double beta_z = y[2]/gamma;
+  const double RelTol = 1.e-10;//Relative Tolarance for modifying dp/dt using the RR force
+  const double extreme_small = 1.e-24;//Set a extreme small number
 
-  out_buffer = ( double * ) malloc ( 6 * sizeof * out_buffer);//programmer should release this pointer outside this function
-  out_buffer[0] = beta_z - beta_w;
-  out_buffer[1] = y[3]/gamma; // out_buffer[1] is beta_x
+  out_buffer = ( double * ) malloc ( 4 * sizeof * out_buffer);//programmer should release this pointer outside this function
+  out_buffer[0] = y[2]/gamma - beta_w; // = beta_z
+  out_buffer[1] = y[3]/gamma; // = beta_x
+  // set pz dot and px dot with external force first.
+  out_buffer[2] = -.5*y[0];
+  out_buffer[3] = -.5*y[1];
 
   if(if_RR)
-  {  
-    const double dgamma_over_dt = beta_z*y[4] + out_buffer[1]*y[5];
-    out_buffer[2] = y[4];
-    out_buffer[3] = y[5];
-    const double tmp = Square(dgamma_over_dt)-Square(y[4])-Square(y[5]);
-    out_buffer[4] = ((y[4]+y[0]*.5)/re_times_2_over_3 - dgamma_over_dt*y[4])/gamma - tmp*y[2];
-    out_buffer[5] = ((y[5]+y[1]*.5)/re_times_2_over_3 - dgamma_over_dt*y[5])/gamma - tmp*y[3];
-    fprintf(stdout,"%e %e %e %e %e %e\n", y[0], y[1], y[2], y[3], y[4], y[5]);
-  }
-  else
   {
-    // Do not have to calculate out_buffer[4] and out_buffer[5] if the radiation reaction is turned off
-    out_buffer[2] = -0.5*y[0];
-    out_buffer[3] = -0.5*y[1];
+    int i;
+    const int max_cycles = 3;
+    double f_ext[2]={out_buffer[2],out_buffer[3]};
+    double tmp_f_RR[2];
+    double new_tmp_f_RR[2];
+    f_rad(y+2,f_ext,tmp_f_RR);//set tmp rr force with the external force only
+    for(i=0;i<max_cycles;i++)
+    {
+      //printf("In dy_over_dt, cycle i = %d\n",i);
+      out_buffer[2] = f_ext[0] + tmp_f_RR[0];
+      out_buffer[3] = f_ext[1] + tmp_f_RR[1];
+      
+      f_rad(y+2,out_buffer+2,new_tmp_f_RR);//calculate new tmp rr force
+      //printf("diff = %e\n", (new_tmp_f_RR[0]-tmp_f_RR[0])/tmp_f_RR[0]);
+      if((fabs(new_tmp_f_RR[0]-tmp_f_RR[0])<fabs(tmp_f_RR[0]*RelTol) || fabs(tmp_f_RR[0])<extreme_small)
+         && (fabs(new_tmp_f_RR[1]-tmp_f_RR[1])<fabs(tmp_f_RR[1]*RelTol) || fabs(tmp_f_RR[1])<extreme_small))
+      //Check if the change is large enough; if not, break
+        break;
+      //else
+      //  if(i>=max_cycles-1) printf("(new_tmp_f_RR[0]-tmp_f_RR[0])/tmp_f_RR[0] = %e, (new_tmp_f_RR[1]-tmp_f_RR[1])/tmp_f_RR[1] = %e\n", (new_tmp_f_RR[0]-tmp_f_RR[0])/tmp_f_RR[0], (new_tmp_f_RR[1]-tmp_f_RR[1])/tmp_f_RR[1]);
+      //printf("f_RR[0] is changed from %.*e to %.*e; relative change is %.*e\n",20,tmp_f_RR[0],20,new_tmp_f_RR[0],10,(new_tmp_f_RR[0]-tmp_f_RR[0])/tmp_f_RR[0]);
+      //printf("f_RR[1] is changed from %.*e to %.*e; relative change is %.*e\n",20,tmp_f_RR[1],20,new_tmp_f_RR[1],10,(new_tmp_f_RR[1]-tmp_f_RR[1])/tmp_f_RR[1]);
+      //tmp_f_RR[0] = 0.618*new_tmp_f_RR[0]+0.382*tmp_f_RR[0];
+      tmp_f_RR[0] = new_tmp_f_RR[0];
+      //tmp_f_RR[1] = 0.618*new_tmp_f_RR[1]+0.382*tmp_f_RR[0];
+      tmp_f_RR[1] = new_tmp_f_RR[1];
+      //printf("i = %d\n", i);
+    }
+    if(i>=max_cycles) printf("Warrning: max_cycles is reached in dy_over_dt!\n");
   }
   return out_buffer;
 }
