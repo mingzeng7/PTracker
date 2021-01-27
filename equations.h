@@ -4,6 +4,18 @@
 
 #include "includes.h"
 
+void f_ext ( const double * x, double * f );
+/* External force.
+   Input:
+   x: position
+      x[0] is xi = z - beta_w*t
+      x[1] is x
+   Output:
+   f: Pointer to an array of two doubles, containing the force.
+      f[0] is f^ext_z
+      f[1] is f^ext_x
+*/
+
 void f_rad ( const double * p, const double * dp_over_dt, double * f );
 /* Radiation reaction force. For 1st radiation term turned on (if_RR1=1), estimate d^2 p/dt^2 by d f^ext/dt.
    Input:
