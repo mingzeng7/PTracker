@@ -7,6 +7,7 @@
 #include <string.h>
 #include <libconfig.h>
 #include <hdf5.h>
+#include <H5LTpublic.h>
 #include <time.h>
 #include <math.h>
 #include "constant.h"

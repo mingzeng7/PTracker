@@ -84,15 +84,15 @@ double * dy_over_dt ( double t, const double * y )
   {
     int i;
     const int max_cycles = 3;
-    double f_ext[2]={out_buffer[2],out_buffer[3]};
+    double f_ext_save[2]={out_buffer[2],out_buffer[3]};
     double tmp_f_RR[2];
     double new_tmp_f_RR[2];
-    f_rad(y+2,f_ext,tmp_f_RR);//set tmp rr force with the external force only
+    f_rad(y+2,f_ext_save,tmp_f_RR);//set tmp rr force with the external force only
     for(i=0;i<max_cycles;i++)
     {
       //printf("In dy_over_dt, cycle i = %d\n",i);
-      out_buffer[2] = f_ext[0] + tmp_f_RR[0];
-      out_buffer[3] = f_ext[1] + tmp_f_RR[1];
+      out_buffer[2] = f_ext_save[0] + tmp_f_RR[0];
+      out_buffer[3] = f_ext_save[1] + tmp_f_RR[1];
       
       f_rad(y+2,out_buffer+2,new_tmp_f_RR);//calculate new tmp rr force
       if((fabs(new_tmp_f_RR[0]-tmp_f_RR[0])<fabs(tmp_f_RR[0]*RelTol) || fabs(tmp_f_RR[0])<extreme_small)
