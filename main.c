@@ -195,17 +195,18 @@ int main(int argc, char **argv)
         {
           printf("Single particle 1:\n");
           config_setting_t * single_particle = config_setting_get_elem(setting, i);
-          double A, gamma0;
+          double A, B, gamma0;
           config_setting_lookup_float(single_particle, "A", &A);
+          config_setting_lookup_float(single_particle, "B", &B);
           config_setting_lookup_float(single_particle, "gamma0", &gamma0);
           double r_omega_beta = sqrt(gamma0*2.); // 1 over Betatron oscillation frequency
-          printf("Start to track particle #%d: A = %f, gamma0 = %f\n", i,A, gamma0);
+          printf("Start to track particle #%d: A = %f, B = %f, gamma0 = %f\n", i,A,B, gamma0);
           double dt = r_omega_beta/sampling_factor;
           fprintf(stdout,"dt = %f\n", dt);
           int track_arry_lenth = ((int) (t_duration / dt))+1;
           fprintf(stdout,"track_arry_lenth =  %d\n", track_arry_lenth);
           double * buffer;
-          int column_length = 5; // The columns are t, zeta, x, pz, px
+          int column_length = 7; // The columns are t, zeta, x, y, pz, px, py
           hsize_t * dims;
           dims=(hsize_t *)malloc(2*sizeof *dims);
           dims[0]=track_arry_lenth;
@@ -228,20 +229,25 @@ int main(int argc, char **argv)
           }
 
           double x_1 = A/sqrt(sqrt(gamma0)); // Amplitude of x oscillation
+          double y_1 = B/sqrt(sqrt(gamma0)); // Amplitude of y oscillation
           double zeta0;
           if(config_setting_lookup_float(single_particle, "zeta0", &zeta0))
             fprintf(stdout,"Particle # %d zeta0 = %f\n", i, zeta0);
           else
             fprintf(stderr,"Particle # %d zeta0 not given!\n", i);
           // Set buffer[1] to be initial value of zeta = zeta0 with phase shift
-          buffer[1] = zeta0 - Square(x_1)/r_omega_beta/8*sin(phase0*2);
+          buffer[1] = zeta0 - (Square(x_1)+Square(y_1))/r_omega_beta/8*sin(phase0*2);
 
           // Set buffer[2] to be initial value of x
           buffer[2] = x_1*sin(phase0);
-          // Set buffer[3] to be initial value of pz with phase shift
-          buffer[3] = sqrt(Square(gamma0)-1.0-Square(x_1)*gamma0*(4+cos(phase0*2))/16);
-          // Set buffer[4] to be initial value of px with phase shift
-          buffer[4] = gamma0*x_1*cos(phase0)/r_omega_beta;
+          // Set buffer[3] to be initial value of y
+          buffer[3] = y_1*cos(phase0);
+          // Set buffer[4] to be initial value of pz with phase shift
+          buffer[4] = sqrt(Square(gamma0)-1.0-gamma0*(Square(x_1)+Square(y_1))*(4+cos(phase0*2))/16);
+          // Set buffer[5] to be initial value of px with phase shift
+          buffer[5] = gamma0*x_1*cos(phase0)/r_omega_beta;
+          // Set buffer[6] to be initial value of py with phase shift
+          buffer[6] = gamma0*y_1*sin(phase0)/r_omega_beta;
 
           // j is the index for rows
           int j;
@@ -250,7 +256,7 @@ int main(int argc, char **argv)
             int pre_row_start_index = (j-1)*column_length;
             int this_row_start_index = j*column_length;
             buffer[this_row_start_index] = buffer[pre_row_start_index] + dt;
-            rk4vec ( buffer[pre_row_start_index], 4, buffer+pre_row_start_index+1, buffer+this_row_start_index+1, dt, dy_over_dt );
+            rk4vec ( buffer[pre_row_start_index], column_length-1, buffer+pre_row_start_index+1, buffer+this_row_start_index+1, dt, dy_over_dt );
           }
           sprintf(i_str, "%d", i);
           h5status = H5LTmake_dataset_double (ofile_h5id, i_str, 2, dims ,(const double*)buffer);

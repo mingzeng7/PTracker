@@ -6,14 +6,17 @@ void f_ext ( const double * x, double * f )
    x: position
       x[0] is xi = z - beta_w*t
       x[1] is x
+      x[2] is y
    Output:
    f: Pointer to an array of two doubles, containing the force.
       f[0] is f^ext_z
       f[1] is f^ext_x
+      f[2] is f^ext_y
 */
 {
   f[0] = -.5*x[0];
   f[1] = -.5*x[1];
+  f[2] = -.5*x[2];
   return;
 }
 
@@ -23,15 +26,17 @@ void f_rad ( const double * p, const double * dp_over_dt, double * f )
    p: momentum
       p[0] is pz
       p[1] is px
+      p[2] is py
    dp_over_dt: time derivative of p
       dp_over_dt[0] is dpz/dt
       dp_over_dt[1] is dpx/dt
+      dp_over_dt[2] is dpy/dt
    Output:
-   f: Pointer to an array of two doubles, containing the estimated radiation reactions.
+   f: Pointer to an array of 3 doubles, containing the estimated radiation reactions.
 */
 {
-  const double gamma = sqrt(1.+Square(p[0])+Square(p[1]));
-  const double gamma_dot = (p[0]*dp_over_dt[0]+p[1]*dp_over_dt[1])/gamma;
+  const double gamma = sqrt(1.+Square(p[0])+Square(p[1])+Square(p[2]));
+  const double gamma_dot = (p[0]*dp_over_dt[0]+p[1]*dp_over_dt[1]+p[2]*dp_over_dt[2])/gamma;
   if(if_RR1)
   {
     // 1st term of radiation reactions
@@ -40,19 +45,22 @@ void f_rad ( const double * p, const double * dp_over_dt, double * f )
     // If f^ext is changed, remember to change the following 2 lines also.
     f[0] = re_times_2_over_3 * (gamma_dot*dp_over_dt[0] + .5*(beta_w*gamma - p[0]));
     f[1] = re_times_2_over_3 * (gamma_dot*dp_over_dt[1] - .5*p[1]);
+    f[2] = re_times_2_over_3 * (gamma_dot*dp_over_dt[2] - .5*p[2]);
   }
   else
   {
     f[0] = 0.;
     f[1] = 0.;
+    f[2] = 0.;
   }
 
   if(if_RR2)
   {
     // 2nd term of radiation reactions
-    const double common_term = re_times_2_over_3 * gamma * (Square(gamma_dot) - Square(dp_over_dt[0]) - Square(dp_over_dt[1]));
+    const double common_term = re_times_2_over_3 * gamma * (Square(gamma_dot) - Square(dp_over_dt[0]) - Square(dp_over_dt[1]) - Square(dp_over_dt[2]));
     f[0] += common_term * p[0];
     f[1] += common_term * p[1];
+    f[2] += common_term * p[2];
   }
   return;
 }
@@ -61,48 +69,54 @@ double * dy_over_dt ( double t, const double * y )
 /* Create and set the array of dy_over_dt.
    Input:
    t: time
-   y: y[0] is z-beta_w * t, where z is the longitudinal position, and beta_w is the speed of the wake.
+   y: y[0] is zeta = z-beta_w * t, where z is the longitudinal position, and beta_w is the speed of the wake.
       y[1] is x.
-      y[2] is pz.
-      y[3] ps px.
+      y[2] is y.
+      y[3] is pz.
+      y[4] ps px.
+      y[5] ps py.
    Output:
       Pointer to an array of doubles, containing the results of dy_over_dt. Programmer should release this memory allocation after use.
  */
 {
   double * out_buffer;
-  const double gamma = sqrt(1.+Square(y[2])+Square(y[3]));
+  const double gamma = sqrt(1.+Square(y[3])+Square(y[4])+Square(y[5]));
   const double RelTol = 1.e-10;//Relative Tolarance for modifying dp/dt using the RR force
   const double extreme_small = 1.e-24;//Set a extreme small number
 
-  out_buffer = ( double * ) malloc ( 4 * sizeof * out_buffer);//programmer should release this pointer outside this function
-  out_buffer[0] = y[2]/gamma - beta_w; // = beta_z
-  out_buffer[1] = y[3]/gamma; // = beta_x
+  out_buffer = ( double * ) malloc ( 6 * sizeof * out_buffer);//programmer should release this pointer outside this function
+  out_buffer[0] = y[3]/gamma - beta_w; // = beta_z - beta_w = dot_zeta
+  out_buffer[1] = y[4]/gamma; // = beta_x
+  out_buffer[2] = y[5]/gamma; // = beta_y
   // set pz dot and px dot equal to external forces first.
-  f_ext(y, out_buffer+2);
+  f_ext(y, out_buffer+3);
 
   if(if_RR)
   {
     int i;
     const int max_cycles = 3;
-    double f_ext_save[2]={out_buffer[2],out_buffer[3]};
-    double tmp_f_RR[2];
-    double new_tmp_f_RR[2];
-    f_rad(y+2,f_ext_save,tmp_f_RR);//set tmp rr force with the external force only
+    double f_ext_save[3]={out_buffer[3],out_buffer[4],out_buffer[5]};
+    double tmp_f_RR[3];
+    double new_tmp_f_RR[3];
+    f_rad(y+3,f_ext_save,tmp_f_RR);//set tmp rr force with the external force only
     for(i=0;i<max_cycles;i++)
     {
       //printf("In dy_over_dt, cycle i = %d\n",i);
-      out_buffer[2] = f_ext_save[0] + tmp_f_RR[0];
-      out_buffer[3] = f_ext_save[1] + tmp_f_RR[1];
+      out_buffer[3] = f_ext_save[0] + tmp_f_RR[0];
+      out_buffer[4] = f_ext_save[1] + tmp_f_RR[1];
+      out_buffer[5] = f_ext_save[2] + tmp_f_RR[2];
       
-      f_rad(y+2,out_buffer+2,new_tmp_f_RR);//calculate new tmp rr force
+      f_rad(y+3,out_buffer+3,new_tmp_f_RR);//calculate new tmp rr force
       if((fabs(new_tmp_f_RR[0]-tmp_f_RR[0])<fabs(tmp_f_RR[0]*RelTol) || fabs(tmp_f_RR[0])<extreme_small)
-         && (fabs(new_tmp_f_RR[1]-tmp_f_RR[1])<fabs(tmp_f_RR[1]*RelTol) || fabs(tmp_f_RR[1])<extreme_small))
+         && (fabs(new_tmp_f_RR[1]-tmp_f_RR[1])<fabs(tmp_f_RR[1]*RelTol) || fabs(tmp_f_RR[1])<extreme_small)
+         && (fabs(new_tmp_f_RR[2]-tmp_f_RR[2])<fabs(tmp_f_RR[2]*RelTol) || fabs(tmp_f_RR[2])<extreme_small))
       //Check if the change is negligible; if not, prepare for next loop
         break;
       //tmp_f_RR[0] = 0.618*new_tmp_f_RR[0]+0.382*tmp_f_RR[0];
       //tmp_f_RR[1] = 0.618*new_tmp_f_RR[1]+0.382*tmp_f_RR[0];
       tmp_f_RR[0] = new_tmp_f_RR[0];
       tmp_f_RR[1] = new_tmp_f_RR[1];
+      tmp_f_RR[2] = new_tmp_f_RR[2];
     }
     if(i>=max_cycles) printf("Warrning: max_cycles is reached in dy_over_dt!\n");
   }
