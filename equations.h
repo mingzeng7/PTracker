@@ -4,16 +4,22 @@
 
 #include "includes.h"
 
-void f_ext ( const double * x, double * f );
+void f_ext ( const double * x, const double * dot_x, double * f );
 /* External force.
    Input:
    x: position
-      x[0] is xi = z - beta_w*t
+      x[0] is zeta = z - beta_w*t
       x[1] is x
+      x[2] is y
+   dot_x: time derivative of x
+      dot_x[0] is beta_z - beta_w
+      dot_x[1] is beta_x
+      dot_x[2] is beta_y
    Output:
    f: Pointer to an array of two doubles, containing the force.
       f[0] is f^ext_z
       f[1] is f^ext_x
+      f[2] is f^ext_y
 */
 
 void f_rad ( const double * p, const double * dp_over_dt, double * f );

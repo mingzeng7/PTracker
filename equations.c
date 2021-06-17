@@ -1,22 +1,27 @@
 #include "equations.h"
 
-void f_ext ( const double * x, double * f )
+void f_ext ( const double * x, const double * dot_x, double * f )
 /* External force.
    Input:
    x: position
-      x[0] is xi = z - beta_w*t
+      x[0] is zeta = z - beta_w*t
       x[1] is x
       x[2] is y
+   dot_x: time derivative of x
+      dot_x[0] is beta_z - beta_w
+      dot_x[1] is beta_x
+      dot_x[2] is beta_y
    Output:
-   f: Pointer to an array of two doubles, containing the force.
+   f: Pointer to an array of 3 doubles, containing the force.
       f[0] is f^ext_z
       f[1] is f^ext_x
       f[2] is f^ext_y
 */
 {
-  f[0] = -.5*x[0];
-  f[1] = -.5*x[1];
-  f[2] = -.5*x[2];
+  const double common_term = -.25*(1.+dot_x[0]+beta_w);
+  f[0] = -.5*x[0]+0.25*(x[1]*dot_x[1]+x[2]*dot_x[2]);
+  f[1] = x[1]*common_term;
+  f[2] = x[2]*common_term;
   return;
 }
 
@@ -42,7 +47,7 @@ void f_rad ( const double * p, const double * dp_over_dt, double * f )
     // 1st term of radiation reactions
     // d^2 p/dt^2 is replaced by d f^ext/dt.
     // We assert f^ext_x = -x/2 and f^ext_z = -zeta/2 here.
-    // If f^ext is changed, remember to change the following 2 lines also.
+    // If f^ext changes, remember to change the following 3 lines also.
     f[0] = re_times_2_over_3 * (gamma_dot*dp_over_dt[0] + .5*(beta_w*gamma - p[0]));
     f[1] = re_times_2_over_3 * (gamma_dot*dp_over_dt[1] - .5*p[1]);
     f[2] = re_times_2_over_3 * (gamma_dot*dp_over_dt[2] - .5*p[2]);
@@ -81,15 +86,15 @@ double * dy_over_dt ( double t, const double * y )
 {
   double * out_buffer;
   const double gamma = sqrt(1.+Square(y[3])+Square(y[4])+Square(y[5]));
-  const double RelTol = 1.e-10;//Relative Tolarance for modifying dp/dt using the RR force
-  const double extreme_small = 1.e-24;//Set a extreme small number
+  const double RelTol = 1.e-5;//Relative Tolarance for modifying dp/dt using the RR force
+  const double extreme_small = 1.e-10;//Set an extremely small number
 
   out_buffer = ( double * ) malloc ( 6 * sizeof * out_buffer);//programmer should release this pointer outside this function
   out_buffer[0] = y[3]/gamma - beta_w; // = beta_z - beta_w = dot_zeta
   out_buffer[1] = y[4]/gamma; // = beta_x
   out_buffer[2] = y[5]/gamma; // = beta_y
   // set pz dot and px dot equal to external forces first.
-  f_ext(y, out_buffer+3);
+  f_ext(y, out_buffer, out_buffer+3);
 
   if(if_RR)
   {
@@ -98,6 +103,7 @@ double * dy_over_dt ( double t, const double * y )
     double f_ext_save[3]={out_buffer[3],out_buffer[4],out_buffer[5]};
     double tmp_f_RR[3];
     double new_tmp_f_RR[3];
+    double diff_tmp_f_RR[3];
     f_rad(y+3,f_ext_save,tmp_f_RR);//set tmp rr force with the external force only
     for(i=0;i<max_cycles;i++)
     {
@@ -107,9 +113,12 @@ double * dy_over_dt ( double t, const double * y )
       out_buffer[5] = f_ext_save[2] + tmp_f_RR[2];
       
       f_rad(y+3,out_buffer+3,new_tmp_f_RR);//calculate new tmp rr force
-      if((fabs(new_tmp_f_RR[0]-tmp_f_RR[0])<fabs(tmp_f_RR[0]*RelTol) || fabs(tmp_f_RR[0])<extreme_small)
-         && (fabs(new_tmp_f_RR[1]-tmp_f_RR[1])<fabs(tmp_f_RR[1]*RelTol) || fabs(tmp_f_RR[1])<extreme_small)
-         && (fabs(new_tmp_f_RR[2]-tmp_f_RR[2])<fabs(tmp_f_RR[2]*RelTol) || fabs(tmp_f_RR[2])<extreme_small))
+      diff_tmp_f_RR[0] = fabs(new_tmp_f_RR[0]-tmp_f_RR[0]);
+      diff_tmp_f_RR[1] = fabs(new_tmp_f_RR[1]-tmp_f_RR[1]);
+      diff_tmp_f_RR[2] = fabs(new_tmp_f_RR[2]-tmp_f_RR[2]);
+      if((diff_tmp_f_RR[0]<fabs(tmp_f_RR[0]*RelTol) || diff_tmp_f_RR[0]<extreme_small)
+         && (diff_tmp_f_RR[1]<fabs(tmp_f_RR[1]*RelTol) || diff_tmp_f_RR[1]<extreme_small)
+         && (diff_tmp_f_RR[2]<fabs(tmp_f_RR[2]*RelTol) || diff_tmp_f_RR[2]<extreme_small))
       //Check if the change is negligible; if not, prepare for next loop
         break;
       //tmp_f_RR[0] = 0.618*new_tmp_f_RR[0]+0.382*tmp_f_RR[0];

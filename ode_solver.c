@@ -5,7 +5,8 @@
 int rk4vec ( double t0, int m, const double * u0, double * u, double dt, 
   double *f ( double t, const double * u ) )
 
-//Modified by Ming Zeng from the original code of John Burkardt
+// Modified by Ming Zeng from the original code of John Burkardt
+// at https://people.math.sc.edu/Burkardt/c_src/rk4/rk4.c
 /******************************************************************************/
 /*
   Purpose:
