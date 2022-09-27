@@ -216,17 +216,37 @@ int main(int argc, char **argv)
           buffer[0] = t0;
 
           // Get intial phase of the oscillation
-          double phase0;
-          if(config_setting_lookup_float(single_particle, "phase0", &phase0))
+          double phase0_x, phase0_y;
+          if(config_setting_lookup_float(single_particle, "phase0_x", &phase0_x))
           {
-            fprintf(stdout,"Particle # %d phase0 = %f\n", i, phase0);
-            phase0 *= M_PI/180; // Transform degree to radian
+            fprintf(stdout,"Particle # %d phase0_x = %f\n degree", i, phase0_x);
+            phase0_x *= M_PI/180; // Transform degree to radian
           }
           else
           {
-            fprintf(stderr,"Particle # %d phase0 not given! Set to default 0.\n", i);
-            phase0 = 0.;
+            fprintf(stderr,"Particle # %d phase0_x not given! Set to default 0.\n", i);
+            phase0_x = 0.;
           }
+          if(config_setting_lookup_float(single_particle, "phase0_y", &phase0_y))
+          {
+            fprintf(stdout,"Particle # %d phase0_y = %f\n degree", i, phase0_y);
+            phase0_y *= M_PI/180; // Transform degree to radian
+          }
+          else
+          {
+            fprintf(stderr,"Particle # %d phase0_y not given! Set to default 0.\n", i);
+            phase0_y = 0.;
+          }
+          // The intial betatron oscillation follows
+          // zeta = zeta0 - (x * beta_x + y * beta_y)/4
+          // x = x_1 * sin (omega_beta * t + phase0_x)
+          // y = y_1 * sin (omega_beta * t + phase0_y)
+          // beta_x = omega_beta * x_1 * cos (omega_beta * t + phase0_x)
+          // beta_y = omega_beta * y_1 * cos (omega_beta * t + phase0_y)
+          // px = gamma0 * omega_beta * x_1 * cos (omega_beta * t + phase0_x)
+          // py = gamma0 * omega_beta * y_1 * cos (omega_beta * t + phase0_y)
+          // at t = 0, gamma = gamma0 + (K^2/2 - lambda/4) * (x_1^2/2-x^2 + y_1^2/2-y^2) = gamma0 + (x_1^2/2-x^2 + y_1^2/2-y^2)/8
+          // thus pz^2 = gamma^2 - 1 - px^2 - py^2
 
           double x_1 = A/sqrt(sqrt(gamma0)); // Amplitude of x oscillation
           double y_1 = B/sqrt(sqrt(gamma0)); // Amplitude of y oscillation
@@ -236,18 +256,19 @@ int main(int argc, char **argv)
           else
             fprintf(stderr,"Particle # %d zeta0 not given!\n", i);
           // Set buffer[1] to be initial value of zeta = zeta0 with phase shift
-          buffer[1] = zeta0 - (Square(x_1)+Square(y_1))/r_omega_beta/8*sin(phase0*2);
+          buffer[1] = zeta0 - (Square(x_1)*sin(phase0_x*2)+Square(y_1)*sin(phase0_y*2))/r_omega_beta/8;
 
           // Set buffer[2] to be initial value of x
-          buffer[2] = x_1*sin(phase0);
+          buffer[2] = x_1*sin(phase0_x);
           // Set buffer[3] to be initial value of y
-          buffer[3] = y_1*cos(phase0);
-          // Set buffer[4] to be initial value of pz with phase shift
-          buffer[4] = sqrt(Square(gamma0)-1.0-gamma0*(Square(x_1)+Square(y_1))*(4+cos(phase0*2))/16);
-          // Set buffer[5] to be initial value of px with phase shift
-          buffer[5] = gamma0*x_1*cos(phase0)/r_omega_beta;
-          // Set buffer[6] to be initial value of py with phase shift
-          buffer[6] = gamma0*y_1*sin(phase0)/r_omega_beta;
+          buffer[3] = y_1*cos(phase0_y);
+          // Set buffer[5] to be initial value of px
+          buffer[5] = gamma0*x_1*cos(phase0_x)/r_omega_beta;
+          // Set buffer[6] to be initial value of py
+          buffer[6] = gamma0*y_1*sin(phase0_y)/r_omega_beta;
+          // Set buffer[4] to be initial value of pz
+          // gamma = gamma0 + (Square(x_1)/2-Square(buffer[2]) + Square(y_1)/2-Square(buffer[3]))/8
+          buffer[4] = sqrt(Square(gamma0 + (Square(x_1)/2-Square(buffer[2]) + Square(y_1)/2-Square(buffer[3]))/8)-1-Square(buffer[5])-Square(buffer[6]));
 
           // j is the index for rows
           int j;
