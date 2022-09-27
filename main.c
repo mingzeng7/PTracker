@@ -232,11 +232,33 @@ int main(int argc, char **argv)
           printf("Single particle 1:\n");
           config_setting_t * single_particle = config_setting_get_elem(setting, i);
           double A, B, gamma0;
-          config_setting_lookup_float(single_particle, "A", &A);
-          config_setting_lookup_float(single_particle, "B", &B);
+          double x_1; // Amplitude of x oscillation. Setting x_1 overrides A
+          double y_1; // Amplitude of y oscillation. Setting y_1 overrides B
+          
           config_setting_lookup_float(single_particle, "gamma0", &gamma0);
+          if(config_setting_lookup_float(single_particle, "x_1", &x_1))
+          {
+            fprintf(stdout,"Particle # %d x_1 = %f\n", i, x_1);
+            A = x_1 * sqrt(sqrt(gamma0)); // "A" may be not necessary. This line may be deleted.
+          }
+          else
+          {
+            config_setting_lookup_float(single_particle, "A", &A);
+            x_1 = A/sqrt(sqrt(gamma0));
+          }
+          if(config_setting_lookup_float(single_particle, "y_1", &y_1))
+          {
+            fprintf(stdout,"Particle # %d y_1 = %f\n", i, y_1);
+            B = y_1 * sqrt(sqrt(gamma0)); // "B" may be not necessary. This line may be deleted.
+          }
+          else
+          {
+            config_setting_lookup_float(single_particle, "B", &B);
+            y_1 = B/sqrt(sqrt(gamma0));
+          }
+          
           double r_omega_beta = sqrt(gamma0/(half_kapa_square*2)); // 1 over Betatron oscillation frequency
-          printf("Start to track particle #%d: A = %f, B = %f, gamma0 = %f\n", i,A,B, gamma0);
+          printf("Start to track particle #%d: x_1 = %f, y_1 = %f, gamma0 = %f\n", i, x_1, y_1, gamma0);
           double dt = r_omega_beta/sampling_factor;
           fprintf(stdout,"dt = %f\n", dt);
           int track_arry_lenth = ((int) (t_duration / dt))+1;
@@ -284,14 +306,12 @@ int main(int argc, char **argv)
           // at t = 0, gamma = gamma0 + 0.5*(K^2/2 - lambda/4) * (x_1^2/2-x^2 + y_1^2/2-y^2) = gamma0 + (x_1^2/2-x^2 + y_1^2/2-y^2)/8
           // thus pz^2 = gamma^2 - 1 - px^2 - py^2
 
-          double x_1 = A/sqrt(sqrt(gamma0)); // Amplitude of x oscillation
-          double y_1 = B/sqrt(sqrt(gamma0)); // Amplitude of y oscillation
           double zeta0;
           if(config_setting_lookup_float(single_particle, "zeta0", &zeta0))
             fprintf(stdout,"Particle # %d zeta0 = %f\n", i, zeta0);
           else
             fprintf(stderr,"Particle # %d zeta0 not given!\n", i);
-          // Set buffer[1] to be initial value of zeta = zeta0 with phase shift
+          // Set buffer[1] to be initial value of zeta = zeta0 - 0.25*(x*beta_x + y*beta_y)
           buffer[1] = zeta0 - (Square(x_1)*sin(phase0_x*2)+Square(y_1)*sin(phase0_y*2))/r_omega_beta/8;
 
           // Set buffer[2] to be initial value of x
