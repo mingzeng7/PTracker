@@ -8,7 +8,10 @@ int if_RR; // if_RR == 0 will turn off all the radiation reactions
 int if_RR1; // if_RR1 == 0 will turn off the 1st term of radiation reactions
 int if_RR2; // if_RR2 == 0 will turn off the 2nd term of radiation reactions
 double re_times_2_over_3; // Classical electron radius normalized to k_p^{-1}, times 2/3
-double beta_w;
+double beta_w; // The wake phase velocity normalized to c
+double f_z0; // A constant external force in the z direction
+double half_kapa_square; // The transverse restoring parameter, E_r = half_kapa_square * r, B_theta = -half_kapa_square * r
+double lambda; // The slop of longitudinal electric field, E_z = lambda * zeta
 
 int main(int argc, char **argv)
 {
@@ -36,7 +39,7 @@ int main(int argc, char **argv)
     return(EXIT_FAILURE);
   }
 
-  //Reading and set if_RR
+  //Read and set if_RR
   if(config_lookup_bool(&cfg, "if_RR", &if_RR))
   {
     printf("if_RR =  %d\n", if_RR);
@@ -47,7 +50,7 @@ int main(int argc, char **argv)
     printf("if_RR =  %d using the default value!\n", if_RR);
   }
 
-  //Reading and set if_RR1
+  //Read and set if_RR1
   if(config_lookup_bool(&cfg, "if_RR1", &if_RR1))
   {
     printf("if_RR1 =  %d\n", if_RR1);
@@ -58,7 +61,7 @@ int main(int argc, char **argv)
     printf("if_RR1 =  %d using the default value!\n", if_RR1);
   }
 
-  //Reading and set if_RR2
+  //Read and set if_RR2
   if(config_lookup_bool(&cfg, "if_RR2", &if_RR2))
   {
     printf("if_RR2 =  %d\n", if_RR2);
@@ -69,7 +72,7 @@ int main(int argc, char **argv)
     printf("if_RR2 =  %d using the default value!\n", if_RR2);
   }
 
-  //Reading kp and set re
+  //Read kp and set re
   double kp_SI;
   if(config_lookup_float(&cfg, "wake.kp_SI", &kp_SI))
   {
@@ -82,7 +85,7 @@ int main(int argc, char **argv)
   }
   re_times_2_over_3 = kp_SI * re_SI * 2.0/3.0;
 
-  //Reading gamma_w and set beta_w
+  //Read gamma_w and set beta_w
   double gamma_w;
   if(config_lookup_float(&cfg, "wake.gamma_w", &gamma_w))
   {
@@ -95,6 +98,39 @@ int main(int argc, char **argv)
   }
   beta_w = sqrt(1.-1./Square(gamma_w));
   printf("beta_w = %.*e\n", 10, beta_w);
+
+  //Read and set f_z0
+  if(config_lookup_float(&cfg, "wake.f_z0", &f_z0))
+  {
+    printf("wake.f_z0 =  %f\n", f_z0);
+  }
+  else
+  {
+    f_z0 = default_f_z0;
+    printf("wake.f_z0 = %f using the default value!\n", f_z0);
+  }
+
+  //Read and set half_kapa_square
+  if(config_lookup_float(&cfg, "wake.half_kapa_square", &half_kapa_square))
+  {
+    printf("wake.half_kapa_square =  %f\n", half_kapa_square);
+  }
+  else
+  {
+    half_kapa_square = default_half_kapa_square;
+    printf("wake.half_kapa_square = %f using the default value!\n", half_kapa_square);
+  }
+
+  //Read and set lambda
+  if(config_lookup_float(&cfg, "wake.lambda", &lambda))
+  {
+    printf("wake.lambda =  %f\n", lambda);
+  }
+  else
+  {
+    lambda = default_lambda;
+    printf("wake.lambda = %f using the default value!\n", lambda);
+  }
 
   //randomness
   int time_seed;
@@ -199,7 +235,7 @@ int main(int argc, char **argv)
           config_setting_lookup_float(single_particle, "A", &A);
           config_setting_lookup_float(single_particle, "B", &B);
           config_setting_lookup_float(single_particle, "gamma0", &gamma0);
-          double r_omega_beta = sqrt(gamma0*2.); // 1 over Betatron oscillation frequency
+          double r_omega_beta = sqrt(gamma0/(half_kapa_square*2)); // 1 over Betatron oscillation frequency
           printf("Start to track particle #%d: A = %f, B = %f, gamma0 = %f\n", i,A,B, gamma0);
           double dt = r_omega_beta/sampling_factor;
           fprintf(stdout,"dt = %f\n", dt);
@@ -245,7 +281,7 @@ int main(int argc, char **argv)
           // beta_y = omega_beta * y_1 * cos (omega_beta * t + phase0_y)
           // px = gamma0 * omega_beta * x_1 * cos (omega_beta * t + phase0_x)
           // py = gamma0 * omega_beta * y_1 * cos (omega_beta * t + phase0_y)
-          // at t = 0, gamma = gamma0 + (K^2/2 - lambda/4) * (x_1^2/2-x^2 + y_1^2/2-y^2) = gamma0 + (x_1^2/2-x^2 + y_1^2/2-y^2)/8
+          // at t = 0, gamma = gamma0 + 0.5*(K^2/2 - lambda/4) * (x_1^2/2-x^2 + y_1^2/2-y^2) = gamma0 + (x_1^2/2-x^2 + y_1^2/2-y^2)/8
           // thus pz^2 = gamma^2 - 1 - px^2 - py^2
 
           double x_1 = A/sqrt(sqrt(gamma0)); // Amplitude of x oscillation
@@ -267,8 +303,8 @@ int main(int argc, char **argv)
           // Set buffer[6] to be initial value of py
           buffer[6] = gamma0*y_1*sin(phase0_y)/r_omega_beta;
           // Set buffer[4] to be initial value of pz
-          // gamma = gamma0 + (Square(x_1)/2-Square(buffer[2]) + Square(y_1)/2-Square(buffer[3]))/8
-          buffer[4] = sqrt(Square(gamma0 + (Square(x_1)/2-Square(buffer[2]) + Square(y_1)/2-Square(buffer[3]))/8)-1-Square(buffer[5])-Square(buffer[6]));
+          // gamma = gamma0 + 0.5*(half_kapa_square - lambda*0.25) * (Square(x_1)/2-Square(buffer[2]) + Square(y_1)/2-Square(buffer[3]))
+          buffer[4] = sqrt(Square(gamma0 + 0.5*(half_kapa_square - lambda*0.25) * (Square(x_1)/2-Square(buffer[2]) + Square(y_1)/2-Square(buffer[3])))-1-Square(buffer[5])-Square(buffer[6]));
 
           // j is the index for rows
           int j;

@@ -13,13 +13,13 @@ void f_ext ( const double * x, const double * dot_x, double * f )
       dot_x[2] is beta_y
    Output:
    f: Pointer to an array of 3 doubles, containing the force.
-      f[0] is f^ext_z
-      f[1] is f^ext_x
-      f[2] is f^ext_y
+      f[0] is f^ext_z = f_z0 - lambda*zeta + half_kapa_square*(x*beta_x + y*beta_y);
+      f[1] is f^ext_x = -half_kapa_square*(1.+beta_z)*x
+      f[2] is f^ext_y = -half_kapa_square*(1.+beta_z)*y
 */
 {
-  const double common_term = -.25*(1.+dot_x[0]+beta_w);
-  f[0] = -.5*x[0]+0.25*(x[1]*dot_x[1]+x[2]*dot_x[2]);
+  const double common_term = -half_kapa_square*(1.+dot_x[0]+beta_w);
+  f[0] = f_z0 - lambda*x[0] + half_kapa_square*(x[1]*dot_x[1]+x[2]*dot_x[2]);
   f[1] = x[1]*common_term;
   f[2] = x[2]*common_term;
   return;
