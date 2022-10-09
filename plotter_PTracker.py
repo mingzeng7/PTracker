@@ -45,9 +45,25 @@ class PT_plt:
         px_peaks_interp = np.interp(t_x_peaks, t[px_peak_inds], px_peaks)
         return x_peaks*px_peaks_interp, t_x_peaks
         
-    def get_S(self):
-        x1_times_px1, t = self.get_x1_times_px1()
-        return x1_times_px1*np.pi, t
+    def get_y1_times_py1(self):
+        t = self.get('t')
+        y_peak_inds = self.find_peak_inds('y')
+        y_peaks = np.abs(self.get('y')[y_peak_inds])
+        py_peak_inds = self.find_peak_inds('py')
+        py_peaks = np.abs(self.get('py')[py_peak_inds])
+        t_y_peaks = t[y_peak_inds]
+        py_peaks_interp = np.interp(t_y_peaks, t[py_peak_inds], py_peaks)
+        return y_peaks*py_peaks_interp, t_y_peaks
+        
+    def get_Sx(self, if_multi_pi = True):
+        Sx, t = self.get_x1_times_px1()
+        if if_multi_pi: Sx*=np.pi
+        return Sx, t
+        
+    def get_Sy(self, if_multi_pi = True):
+        Sy, t = self.get_y1_times_py1()
+        if if_multi_pi: Sy*=np.pi
+        return Sy, t
         
 if __name__ == "__main__":
     from scipy.integrate import cumtrapz
@@ -57,7 +73,7 @@ if __name__ == "__main__":
         fig,ax = plt.subplots(figsize=(4, 3))
         plotter.save_gamma()
         n_dot_plot = 128
-        S, t = plotter.get_S()
+        S, t = plotter.get_Sx()
         inds = np.linspace(0, len(t)-1, n_dot_plot ,dtype=int)
         t = t[inds]
         S = S[inds]
@@ -74,4 +90,4 @@ if __name__ == "__main__":
         plt.legend(loc=1)
         plt.minorticks_on()
         plt.tight_layout()
-        plt.show()
+    plt.show()
