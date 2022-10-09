@@ -317,11 +317,11 @@ int main(int argc, char **argv)
           // Set buffer[2] to be initial value of x
           buffer[2] = x_1*sin(phase0_x);
           // Set buffer[3] to be initial value of y
-          buffer[3] = y_1*cos(phase0_y);
+          buffer[3] = y_1*sin(phase0_y);
           // Set buffer[5] to be initial value of px
           buffer[5] = gamma0*x_1*cos(phase0_x)/r_omega_beta;
           // Set buffer[6] to be initial value of py
-          buffer[6] = gamma0*y_1*sin(phase0_y)/r_omega_beta;
+          buffer[6] = gamma0*y_1*cos(phase0_y)/r_omega_beta;
           // Set buffer[4] to be initial value of pz
           // gamma = gamma0 + 0.5*(half_kapa_square - lambda*0.25) * (Square(x_1)/2-Square(buffer[2]) + Square(y_1)/2-Square(buffer[3]))
           buffer[4] = sqrt(Square(gamma0 + 0.5*(half_kapa_square - lambda*0.25) * (Square(x_1)/2-Square(buffer[2]) + Square(y_1)/2-Square(buffer[3])))-1-Square(buffer[5])-Square(buffer[6]));
