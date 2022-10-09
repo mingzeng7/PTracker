@@ -9,7 +9,7 @@ int if_RR1; // if_RR1 == 0 will turn off the 1st term of radiation reactions
 int if_RR2; // if_RR2 == 0 will turn off the 2nd term of radiation reactions
 double re_times_2_over_3; // Classical electron radius normalized to k_p^{-1}, times 2/3
 double beta_w; // The wake phase velocity normalized to c
-double f_z0; // A constant external force in the z direction
+double E_z0; // A constant external force in the z direction
 double half_kapa_square; // The transverse restoring parameter, E_r = half_kapa_square * r, B_theta = -half_kapa_square * r
 double lambda; // The slop of longitudinal electric field, E_z = lambda * zeta
 
@@ -99,15 +99,15 @@ int main(int argc, char **argv)
   beta_w = sqrt(1.-1./Square(gamma_w));
   printf("beta_w = %.*e\n", 10, beta_w);
 
-  //Read and set f_z0
-  if(config_lookup_float(&cfg, "wake.f_z0", &f_z0))
+  //Read and set E_z0
+  if(config_lookup_float(&cfg, "wake.E_z0", &E_z0))
   {
-    printf("wake.f_z0 =  %f\n", f_z0);
+    printf("wake.E_z0 =  %f\n", E_z0);
   }
   else
   {
-    f_z0 = default_f_z0;
-    printf("wake.f_z0 = %f using the default value!\n", f_z0);
+    E_z0 = default_E_z0;
+    printf("wake.E_z0 = %f using the default value!\n", E_z0);
   }
 
   //Read and set half_kapa_square

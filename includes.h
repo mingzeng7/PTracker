@@ -20,7 +20,7 @@ extern int if_RR1;
 extern int if_RR2;
 extern double re_times_2_over_3;
 extern double beta_w;
-extern double f_z0;
+extern double E_z0;
 extern double half_kapa_square;
 extern double lambda;
 #endif /* ifndef __INCLUDES_H */
