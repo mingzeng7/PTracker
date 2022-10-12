@@ -27,7 +27,7 @@ extern const double	re_SI;
 extern const double	default_kp_SI;
 extern const double	default_gamma_w;
 extern const double	default_f_z0;
-extern const double	default_half_kapa_square;
+extern const double	default_kappa_square;
 extern const double	default_lambda;
 extern const double	default_t0;
 extern const double	default_t1;

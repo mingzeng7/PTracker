@@ -10,8 +10,8 @@ int if_RR2; // if_RR2 == 0 will turn off the 2nd term of radiation reactions
 double re_times_2_over_3; // Classical electron radius normalized to k_p^{-1}, times 2/3
 double beta_w; // The wake phase velocity normalized to c
 double f_z0; // A constant external force in the z direction
-double half_kapa_square; // The transverse restoring parameter, E_r = half_kapa_square * r, B_theta = -half_kapa_square * r
 double lambda; // The slop of longitudinal electric field, E_z = lambda * zeta
+double kappa_square; // The transverse restoring parameter, E_r = kappa_square * (1-lambda) * r, B_theta = -kappa_square * lambda * r
 
 int main(int argc, char **argv)
 {
@@ -110,15 +110,15 @@ int main(int argc, char **argv)
     printf("wake.f_z0 = %f using the default value!\n", f_z0);
   }
 
-  //Read and set half_kapa_square
-  if(config_lookup_float(&cfg, "wake.half_kapa_square", &half_kapa_square))
+  //Read and set kappa_square
+  if(config_lookup_float(&cfg, "wake.kappa_square", &kappa_square))
   {
-    printf("wake.half_kapa_square =  %f\n", half_kapa_square);
+    printf("wake.kappa_square =  %f\n", kappa_square);
   }
   else
   {
-    half_kapa_square = default_half_kapa_square;
-    printf("wake.half_kapa_square = %f using the default value!\n", half_kapa_square);
+    kappa_square = default_kappa_square;
+    printf("wake.kappa_square = %f using the default value!\n", kappa_square);
   }
 
   //Read and set lambda
@@ -257,7 +257,7 @@ int main(int argc, char **argv)
             y_1 = B/sqrt(sqrt(gamma0));
           }
           
-          double r_omega_beta = sqrt(gamma0/(half_kapa_square*2)); // 1 over Betatron oscillation frequency
+          double r_omega_beta = sqrt(gamma0/kappa_square); // 1 over Betatron oscillation frequency
           printf("Start to track particle #%d: x_1 = %f, y_1 = %f, gamma0 = %f\n", i, x_1, y_1, gamma0);
           double dt = r_omega_beta/sampling_factor;
           fprintf(stdout,"dt = %f\n", dt);
@@ -323,8 +323,10 @@ int main(int argc, char **argv)
           // Set buffer[6] to be initial value of py
           buffer[6] = gamma0*y_1*cos(phase0_y)/r_omega_beta;
           // Set buffer[4] to be initial value of pz
-          // gamma = gamma0 + 0.5*(half_kapa_square - lambda*0.25) * (Square(x_1)/2-Square(buffer[2]) + Square(y_1)/2-Square(buffer[3]))
-          buffer[4] = sqrt(Square(gamma0 + 0.5*(half_kapa_square - lambda*0.25) * (Square(x_1)/2-Square(buffer[2]) + Square(y_1)/2-Square(buffer[3])))-1-Square(buffer[5])-Square(buffer[6]));
+          // For precise initial value we need beta_z0
+          double beta_z0 = 1 - 0.5*(1./Square(gamma0) + 0.5*kappa_square/gamma0*(Square(x_1)+Square(y_1)))
+          // gamma = gamma0 + 0.5*(kappa_square*(1.-lambda) - lambda*beta_z0*0.25) * ((Square(x_1) + Square(y_1))/2 - Square(buffer[2])-Square(buffer[3]))
+          buffer[4] = sqrt(Square(gamma0 + 0.5*(kappa_square*(1.-lambda) - lambda*beta_z0*0.25) * ((Square(x_1) + Square(y_1))/2 - Square(buffer[2])-Square(buffer[3])))-1.-Square(buffer[5])-Square(buffer[6]));
 
           // j is the index for rows
           int j;
