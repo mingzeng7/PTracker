@@ -26,7 +26,7 @@ extern const int	default_if_RR2; //default bool for whether calculate radiation 
 extern const double	re_SI;
 extern const double	default_kp_SI;
 extern const double	default_gamma_w;
-extern const double	default_E_z0;
+extern const double	default_f_z0;
 extern const double	default_half_kapa_square;
 extern const double	default_lambda;
 extern const double	default_t0;
