@@ -324,7 +324,7 @@ int main(int argc, char **argv)
           buffer[6] = gamma0*y_1*cos(phase0_y)/r_omega_beta;
           // Set buffer[4] to be initial value of pz
           // For precise initial value we need beta_z0
-          double beta_z0 = 1 - 0.5*(1./Square(gamma0) + 0.5*kappa_square/gamma0*(Square(x_1)+Square(y_1)))
+          double beta_z0 = 1. - 0.5*(1./Square(gamma0) + 0.5*kappa_square/gamma0*(Square(x_1)+Square(y_1)));
           // gamma = gamma0 + 0.5*(kappa_square*(1.-lambda) - lambda*beta_z0*0.25) * ((Square(x_1) + Square(y_1))/2 - Square(buffer[2])-Square(buffer[3]))
           buffer[4] = sqrt(Square(gamma0 + 0.5*(kappa_square*(1.-lambda) - lambda*beta_z0*0.25) * ((Square(x_1) + Square(y_1))/2 - Square(buffer[2])-Square(buffer[3])))-1.-Square(buffer[5])-Square(buffer[6]));
 
