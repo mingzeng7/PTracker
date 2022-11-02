@@ -12,6 +12,7 @@ double beta_w; // The wake phase velocity normalized to c
 double f_z0; // A constant external force in the z direction
 double lambda; // The slop of longitudinal electric field, E_z = lambda * zeta
 double kappa_square; // The transverse restoring parameter, E_r = kappa_square * (1-lambda) * r, B_theta = -kappa_square * lambda * r
+double kappa_square_lambda; // = kappa_square * lambda
 
 int main(int argc, char **argv)
 {
@@ -131,6 +132,9 @@ int main(int argc, char **argv)
     lambda = default_lambda;
     printf("wake.lambda = %f using the default value!\n", lambda);
   }
+
+  //Set kappa_square_lambda
+  kappa_square_lambda = kappa_square * lambda;
 
   //randomness
   int time_seed;
@@ -297,14 +301,12 @@ int main(int argc, char **argv)
           }
           // The intial betatron oscillation follows
           // zeta = zeta0 - (x * beta_x + y * beta_y)/4
-          // x = x_1 * sin (omega_beta * t + phase0_x)
-          // y = y_1 * sin (omega_beta * t + phase0_y)
-          // beta_x = omega_beta * x_1 * cos (omega_beta * t + phase0_x)
-          // beta_y = omega_beta * y_1 * cos (omega_beta * t + phase0_y)
-          // px = gamma0 * omega_beta * x_1 * cos (omega_beta * t + phase0_x)
-          // py = gamma0 * omega_beta * y_1 * cos (omega_beta * t + phase0_y)
-          // at t = 0, gamma = gamma0 + 0.5*(K^2/2 - lambda/4) * (x_1^2/2-x^2 + y_1^2/2-y^2) = gamma0 + (x_1^2/2-x^2 + y_1^2/2-y^2)/8
-          // thus pz^2 = gamma^2 - 1 - px^2 - py^2
+          // x = x_1 * cos (omega_beta * t + phase0_x)
+          // y = y_1 * cos (omega_beta * t + phase0_y)
+          // beta_x = -omega_beta * x_1 * sin (omega_beta * t + phase0_x)
+          // beta_y = -omega_beta * y_1 * sin (omega_beta * t + phase0_y)
+          // px = -gamma0 * omega_beta * x_1 * sin (omega_beta * t + phase0_x)
+          // py = -gamma0 * omega_beta * y_1 * sin (omega_beta * t + phase0_y)
 
           double zeta0;
           if(config_setting_lookup_float(single_particle, "zeta0", &zeta0))
@@ -312,16 +314,16 @@ int main(int argc, char **argv)
           else
             fprintf(stderr,"Particle # %d zeta0 not given!\n", i);
           // Set buffer[1] to be initial value of zeta = zeta0 - 0.25*(x*beta_x + y*beta_y)
-          buffer[1] = zeta0 - (Square(x_1)*sin(phase0_x*2)+Square(y_1)*sin(phase0_y*2))/r_omega_beta/8;
+          buffer[1] = zeta0 + (Square(x_1)*sin(phase0_x*2)+Square(y_1)*sin(phase0_y*2))/r_omega_beta/8;
 
           // Set buffer[2] to be initial value of x
-          buffer[2] = x_1*sin(phase0_x);
+          buffer[2] = x_1*cos(phase0_x);
           // Set buffer[3] to be initial value of y
-          buffer[3] = y_1*sin(phase0_y);
+          buffer[3] = y_1*cos(phase0_y);
           // Set buffer[5] to be initial value of px
-          buffer[5] = gamma0*x_1*cos(phase0_x)/r_omega_beta;
+          buffer[5] = -gamma0*x_1*sin(phase0_x)/r_omega_beta;
           // Set buffer[6] to be initial value of py
-          buffer[6] = gamma0*y_1*cos(phase0_y)/r_omega_beta;
+          buffer[6] = -gamma0*y_1*sin(phase0_y)/r_omega_beta;
           // Set buffer[4] to be initial value of pz
           // For precise initial value we need beta_z0
           double beta_z0 = 1. - 0.5*(1./Square(gamma0) + 0.5*kappa_square/gamma0*(Square(x_1)+Square(y_1)));

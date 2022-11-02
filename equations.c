@@ -18,8 +18,8 @@ void f_ext ( const double * x, const double * dot_x, double * f )
       f[2] is f^ext_y = -kappa_square*(1.-lambda+lambda*beta_z)*y
 */
 {
-  const double common_term = -kappa_square*(1.+lambda*(beta_w-1.+dot_x[0]));
-  f[0] = f_z0 - lambda*x[0] + kappa_square*lambda*(x[1]*dot_x[1]+x[2]*dot_x[2]);
+  const double common_term = -kappa_square-kappa_square_lambda*(beta_w+dot_x[0]-1.);
+  f[0] = f_z0 - lambda*x[0] + kappa_square_lambda*(x[1]*dot_x[1]+x[2]*dot_x[2]);
   f[1] = x[1]*common_term;
   f[2] = x[2]*common_term;
   return;
@@ -46,11 +46,13 @@ void f_rad ( const double * p, const double * dp_over_dt, double * f )
   {
     // 1st term of radiation reactions
     // d^2 p/dt^2 is replaced by d f^ext/dt.
-    // We assert f^ext_x = -x/2 and f^ext_z = -zeta/2 here.
+    // We assert f^ext_z = f_z0-lambda*zeta + kappa_square*lambda*(x*beta_x+y*beta_y)
+    // and f^ext_x = -kappa_square*(1+lambda(beta_z-1))*x.
     // If f^ext changes, remember to change the following 3 lines also.
-    f[0] = re_times_2_over_3 * (gamma_dot*dp_over_dt[0] + .5*(beta_w*gamma - p[0]));
-    f[1] = re_times_2_over_3 * (gamma_dot*dp_over_dt[1] - .5*p[1]);
-    f[2] = re_times_2_over_3 * (gamma_dot*dp_over_dt[2] - .5*p[2]);
+    // For simplicity, only the major terms are kept.
+    f[0] = re_times_2_over_3 * (gamma_dot*dp_over_dt[0] + lambda*(beta_w*gamma - p[0]));
+    f[1] = re_times_2_over_3 * (gamma_dot*dp_over_dt[1] - kappa_square*p[1]);
+    f[2] = re_times_2_over_3 * (gamma_dot*dp_over_dt[2] - kappa_square*p[2]);
   }
   else
   {
