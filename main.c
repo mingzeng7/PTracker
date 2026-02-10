@@ -212,7 +212,7 @@ int main(int argc, char **argv)
     output_file = default_output_file;
     printf("No 'output_file' specified. Use %s as a default!\n",output_file);
   }
-  
+
   double t0;
   double t1;
   if(config_lookup_float(&cfg, "t0",&t0))
@@ -358,7 +358,7 @@ int main(int argc, char **argv)
             phi0 = 0.;
           }
           // The intial betatron oscillation follows
-          // zeta = zeta0 - (x * beta_x + y * beta_y)/4,
+          // zeta = zeta0 - (x * beta_x + y * beta_y)/4
           // x = x_1 * cos (omega_beta * t + phase0_x)
           // y = y_1 * cos (omega_beta * t + phase0_y)
           // beta_x = -omega_beta * x_1 * sin (omega_beta * t + phase0_x)
@@ -400,7 +400,7 @@ int main(int argc, char **argv)
             int pre_row_start_index = (j-1)*column_length;
             int this_row_start_index = j*column_length;
             buffer[this_row_start_index] = buffer[pre_row_start_index] + dt;
-            int opt = rk4vec ( buffer[pre_row_start_index], column_length-1, buffer+pre_row_start_index+1, buffer+this_row_start_index+1, dt, dy_over_dt );
+            rk4vec ( buffer[pre_row_start_index], column_length-1, buffer+pre_row_start_index+1, buffer+this_row_start_index+1, dt, dy_over_dt );
           }
           sprintf(i_str, "%d", i);
           h5status = H5LTmake_dataset_double (ofile_h5id, i_str, 2, dims ,(const double*)buffer);

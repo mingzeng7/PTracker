@@ -6,7 +6,7 @@
 CC = gcc
 LD = ld
 TARGET = PTracker
-#引入库文件路径
+
 HDF5_INCLUDE_DIR = /home/gyl/anaconda3/include
 HDF5_LIB_DIR = /home/gyl/anaconda3/lib
 

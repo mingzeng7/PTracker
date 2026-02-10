@@ -71,39 +71,26 @@ int rk4vec ( double t0, int m, const double * u0, double * u, double dt,
   Get four sample values of the derivative.
 */
   f0 = f ( t0, u0 );
-  if (f0 == NULL) return -1;
 
   t1 = t0 + dt / 2.0;
-
   u1 = ( double * ) malloc ( m * sizeof ( double ) );
-  if (u1 == NULL) return -1; 
-
   for ( i = 0; i < m; i++ )
   {
     u1[i] = u0[i] + dt * f0[i] / 2.0;
   }
-
   f1 = f ( t1, u1 );
-  if (f1 == NULL) return -1;
 
   t2 = t0 + dt / 2.0;
-
   u2 = ( double * ) malloc ( m * sizeof ( double ) );
-  if (u2 == NULL)  return -1;
-  
   for ( i = 0; i < m; i++ )
   {
     u2[i] = u0[i] + dt * f1[i] / 2.0;
   }
 
   f2 = f ( t2, u2 );
-  if (f2 == NULL) return -1;
 
   t3 = t0 + dt;
-
   u3 = ( double * ) malloc ( m * sizeof ( double ) );
-  if (u3 == NULL) return -1;
-
   for ( i = 0; i < m; i++ )
   {
      u3[i] = u0[i] + dt * f2[i];
