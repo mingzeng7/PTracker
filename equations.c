@@ -140,7 +140,7 @@ double * dy_over_dt ( double t, const double * y )
   double * out_buffer;
   const double gamma = sqrt(1.+Square(y[3])+Square(y[4])+Square(y[5]));
   const double RelTol = 1.e-5;//Relative Tolarance for modifying dp/dt using the RR force
-  const double extreme_small = 1.e-10;//Set an extremely small number，extremely small 
+  const double extreme_small = 1.e-10;//Set an extremely small number 
   double Omega_B = elec_anomaly+1/gamma;
   double Omega_E = elec_anomaly+1/(1+gamma);
   double Omega_v = elec_anomaly*gamma/(1+gamma);
@@ -168,17 +168,17 @@ double * dy_over_dt ( double t, const double * y )
     for(i=0;i<max_cycles;i++)
     {
       //printf("In dy_over_dt, cycle i = %d\n",i);
-      out_buffer[3] = f_ext_save[0] + tmp_f_RR[0] ;
-      out_buffer[4] = f_ext_save[1] + tmp_f_RR[1] ;
-      out_buffer[5] = f_ext_save[2] + tmp_f_RR[2] ;
+      out_buffer[3] = f_ext_save[0] + tmp_f_RR[0];
+      out_buffer[4] = f_ext_save[1] + tmp_f_RR[1];
+      out_buffer[5] = f_ext_save[2] + tmp_f_RR[2];
       
       f_rad(y+3,out_buffer+3,new_tmp_f_RR);//calculate new tmp rr force
       diff_tmp_f_RR[0] = fabs(new_tmp_f_RR[0]-tmp_f_RR[0]);
       diff_tmp_f_RR[1] = fabs(new_tmp_f_RR[1]-tmp_f_RR[1]);
       diff_tmp_f_RR[2] = fabs(new_tmp_f_RR[2]-tmp_f_RR[2]);
       if((diff_tmp_f_RR[0]<fabs(tmp_f_RR[0]*RelTol) || diff_tmp_f_RR[0]<extreme_small)
-        && (diff_tmp_f_RR[1]<fabs(tmp_f_RR[1]*RelTol) || diff_tmp_f_RR[1]<extreme_small)
-        && (diff_tmp_f_RR[2]<fabs(tmp_f_RR[2]*RelTol) || diff_tmp_f_RR[2]<extreme_small))
+         && (diff_tmp_f_RR[1]<fabs(tmp_f_RR[1]*RelTol) || diff_tmp_f_RR[1]<extreme_small)
+         && (diff_tmp_f_RR[2]<fabs(tmp_f_RR[2]*RelTol) || diff_tmp_f_RR[2]<extreme_small))
       //Check if the change is negligible; if not, prepare for next loop
         break;
       //tmp_f_RR[0] = 0.618*new_tmp_f_RR[0]+0.382*tmp_f_RR[0];
