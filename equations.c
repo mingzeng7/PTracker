@@ -5,7 +5,7 @@
 
 static const int max_cycles = 3;
 static const double RelTol_RR = 1.e-5;//Relative Tolarance for modifying dp/dt using the RR force,1.e-5 before
-static const double extreme_small_RR = 1.e-10;//Set an extremely small number，extremely small 需要改变,1.e-10 before
+static const double extreme_small_RR = 1.e-10;//Set an extremely small number，extremely small
 
 
 
@@ -21,9 +21,9 @@ double dotProduct(const double * a,const double * b)
 }
 void crossProduct(const double  * a, const double  * b, double * result) 
 {
-  result[0] = a[1] * b[2] - a[2] * b[1]; // x 分量
-  result[1] = a[2] * b[0] - a[0] * b[2]; // y 分量
-  result[2] = a[0] * b[1] - a[1] * b[0]; // z 分量
+  result[0] = a[1] * b[2] - a[2] * b[1]; 
+  result[1] = a[2] * b[0] - a[0] * b[2]; 
+  result[2] = a[0] * b[1] - a[1] * b[0]; 
 }
 
 double cube(double x) 
@@ -200,7 +200,7 @@ double * dy_over_dt ( double t, const double * y )
         if((diff_tmp_f_RR[0]<fabs(tmp_f_RR[0]*RelTol_RR) || diff_tmp_f_RR[0]<extreme_small_RR)
           && (diff_tmp_f_RR[1]<fabs(tmp_f_RR[1]*RelTol_RR) || diff_tmp_f_RR[1]<extreme_small_RR)
           && (diff_tmp_f_RR[2]<fabs(tmp_f_RR[2]*RelTol_RR) || diff_tmp_f_RR[2]<extreme_small_RR))
-          //Check if the change is negligible; if not, prepare for next loop;由于S-G力十分小，约为1.e-11,判断条件需要改变。
+          //Check if the change is negligible; if not, prepare for next loop
           break;
         //tmp_f_RR[0] = 0.618*new_tmp_f_RR[0]+0.382*tmp_f_RR[0];
         //tmp_f_RR[1] = 0.618*new_tmp_f_RR[1]+0.382*tmp_f_RR[0];
@@ -217,21 +217,20 @@ void normalize_vector(double *vec, int size)
 {
   double norm = 0.0;
 
-  // 计算模
+
   for (int i = 0; i < size; i++) 
   {
     norm += vec[i] * vec[i];
   }
-  norm = sqrt(norm); // 取模的平方根
+  norm = sqrt(norm); 
 
-  // 检查模是否为零，避免除以零
+
   if (norm == 0.0) 
   {
     printf("Warning: Zero vector cannot be normalized.\n");
-    return; // 或者可以返回特定的错误代码
+    return; 
   }
 
-// 归一化向量
   for (int i = 0; i < size; i++) 
   {
     vec[i] = vec[i] / norm;
