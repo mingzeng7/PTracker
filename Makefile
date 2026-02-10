@@ -14,7 +14,7 @@ LIBCONFIG_INCLUDE_DIR = /home/gyl/anaconda3/pkgs/glib-2.69.1-he621ea3_2/lib/glib
 LIBCONFIG_LIB_DIR = /home/gyl/anaconda3/pkgs/glib-2.69.1-he621ea3_2/lib/glib-2.0/lib
 
 
-CFLAGS = -I$(HDF5_INCLUDE_DIR) -I$(LIBCONFIG_INCLUDE_DIR) -g -fopenmp -DDEBUG
+CFLAGS = -I$(HDF5_INCLUDE_DIR) -I$(LIBCONFIG_INCLUDE_DIR) -g -fopenmp 
 LDFLAGS = -L$(HDF5_LIB_DIR) -L$(LIBCONFIG_LIB_DIR) -lm -lconfig -lhdf5 -lhdf5_hl -fopenmp
 SRCS = $(wildcard *.c)
 BINS = $(SRCS:%.c=%)
