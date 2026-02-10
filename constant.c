@@ -16,6 +16,9 @@ const unsigned int	default_seed = 0;
 const int	default_if_RR = 1;
 const int	default_if_RR1 = 1;
 const int	default_if_RR2 = 1;
+
+
+
 const double	re_SI = 2.8179403262e-15;
 const double	default_kp_SI = 1.e5;
 const double	default_gamma_w = 1.e4;
@@ -25,3 +28,8 @@ const double	default_lambda = 0.5;
 const double	default_t0 = 0.0;
 const double	default_t1 = 1.e5;
 const double	default_sampling_factor = 8.;
+
+const double    h_bar_SI = 1.05457266e-34;
+const double    elec_anomaly = 1.1596521884e-3;
+const double    elec_mc_si = 2.7309774e-22;
+const double    s0 = 1.;
