@@ -2,13 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
-static const int max_cycles = 3;
-static const double RelTol_RR = 1.e-5;//Relative Tolarance for modifying dp/dt using the RR force,1.e-5 before
-static const double extreme_small_RR = 1.e-10;//Set an extremely small number，extremely small 需要改变,1.e-10 before
-
-
-
 double dotProduct(const double * a,const double * b)
 {
   double dot = 0.0;
@@ -21,9 +14,9 @@ double dotProduct(const double * a,const double * b)
 }
 void crossProduct(const double  * a, const double  * b, double * result) 
 {
-  result[0] = a[1] * b[2] - a[2] * b[1]; // x 分量
-  result[1] = a[2] * b[0] - a[0] * b[2]; // y 分量
-  result[2] = a[0] * b[1] - a[1] * b[0]; // z 分量
+  result[0] = a[1] * b[2] - a[2] * b[1]; 
+  result[1] = a[2] * b[0] - a[0] * b[2]; 
+  result[2] = a[0] * b[1] - a[1] * b[0]; 
 }
 
 double cube(double x) 
@@ -32,7 +25,7 @@ double cube(double x)
 }
 
 void f_ext ( const double * x, const double * dot_x, double * f )
-/* External force.no radiation force.As it is named force, the electron charge has been considered as -1 in the expressions.
+/* External force.
    Input:
    x: position
       x[0] is zeta = z - beta_w*t
@@ -56,7 +49,7 @@ void f_ext ( const double * x, const double * dot_x, double * f )
   return;
 }
 
-void f_rad ( const double * p, const double * dp_over_dt, double gama, double * f )
+void f_rad ( const double * p, const double * dp_over_dt, double * f )
 /* Radiation reaction force. For 1st radiation term turned on (if_RR1=1), estimate d^2 p/dt^2 by d f^ext/dt.
   The term means terms in Eq(B15), not approximation
    Input:
@@ -72,8 +65,8 @@ void f_rad ( const double * p, const double * dp_over_dt, double gama, double * 
    f: Pointer to an array of 3 doubles, containing the estimated radiation reactions.
 */
 {
-  //const double gama = sqrt(1.+Square(p[0])+Square(p[1])+Square(p[2]));
-  const double gamma_dot = (p[0]*dp_over_dt[0]+p[1]*dp_over_dt[1]+p[2]*dp_over_dt[2])/gama;
+  const double gamma = sqrt(1.+Square(p[0])+Square(p[1])+Square(p[2]));
+  const double gamma_dot = (p[0]*dp_over_dt[0]+p[1]*dp_over_dt[1]+p[2]*dp_over_dt[2])/gamma;
   if(if_RR1)
   {
     // 1st term of radiation reactions
@@ -82,7 +75,7 @@ void f_rad ( const double * p, const double * dp_over_dt, double gama, double * 
     // and f^ext_x = -kappa_square*(1+lambda(beta_z-1))*x.
     // If f^ext changes, remember to change the following 3 lines also.
     // For simplicity, only the major terms are kept.
-    f[0] = re_times_2_over_3 * (gamma_dot*dp_over_dt[0] + lambda*(beta_w*gama - p[0]));
+    f[0] = re_times_2_over_3 * (gamma_dot*dp_over_dt[0] + lambda*(beta_w*gamma - p[0]));
     f[1] = re_times_2_over_3 * (gamma_dot*dp_over_dt[1] - kappa_square*p[1]);
     f[2] = re_times_2_over_3 * (gamma_dot*dp_over_dt[2] - kappa_square*p[2]);
   }
@@ -96,7 +89,7 @@ void f_rad ( const double * p, const double * dp_over_dt, double gama, double * 
   if(if_RR2)
   {
     // 2nd term of radiation reactions
-    const double common_term = re_times_2_over_3 * gama * (Square(gamma_dot) - Square(dp_over_dt[0]) - Square(dp_over_dt[1]) - Square(dp_over_dt[2]));
+    const double common_term = re_times_2_over_3 * gamma * (Square(gamma_dot) - Square(dp_over_dt[0]) - Square(dp_over_dt[1]) - Square(dp_over_dt[2]));
     f[0] += common_term * p[0];
     f[1] += common_term * p[1];
     f[2] += common_term * p[2];
@@ -104,11 +97,9 @@ void f_rad ( const double * p, const double * dp_over_dt, double gama, double * 
   return;
 }
 
-
-
-void B_eff(const double * x, const double * dot_x, double gama, double Omega_B, double Omega_E, double Omega_v, double * f)
+void B_eff(const double * x, const double * dot_x, double Omega_B, double Omega_E, double Omega_v, double * f)
 {
-  /*efficient B field in TBMT equation and SG force. And Omega = q * B_eff
+  /*efficient B field in TBMT equation and SG force. And Omega = -B_eff for electron
   input:
   dot_x: beta
     dot_x[0] is beta_z - beta_w
@@ -129,8 +120,6 @@ void B_eff(const double * x, const double * dot_x, double gama, double Omega_B, 
   return;
 }
 
-
-//the first-order equations of motion for all particle phase-space coordinates
 double * dy_over_dt ( double t, const double * y )
 /* Create and set the array of dy_over_dt.
    Input:
@@ -148,59 +137,49 @@ double * dy_over_dt ( double t, const double * y )
       Pointer to an array of doubles, containing the results of dy_over_dt. Programmer should release this memory allocation after use.
  */
 {
-  if (y == NULL) 
-  {
-    fprintf(stderr, "NULL pointer passed to dy_over_dt\n");
-    return NULL; // or handle the error appropriately
-  }
   double * out_buffer;
-  //get the value of Lorentz factor gama
-  double gama = sqrt(1.+Square(y[3])+Square(y[4])+Square(y[5]));
-  double Omega_B = elec_anomaly+1/gama;
-  double Omega_E = elec_anomaly+1/(1+gama);
-  double Omega_v = elec_anomaly*gama/(1+gama);
+  const double gamma = sqrt(1.+Square(y[3])+Square(y[4])+Square(y[5]));
+  const double RelTol = 1.e-5;//Relative Tolarance for modifying dp/dt using the RR force
+  const double extreme_small_RR = 1.e-10;//Set an extremely small number，extremely small 
+  double Omega_B = elec_anomaly+1/gamma;
+  double Omega_E = elec_anomaly+1/(1+gamma);
+  double Omega_v = elec_anomaly*gamma/(1+gamma);
 
   out_buffer = ( double * ) malloc ( 9 * sizeof * out_buffer);//programmer should release this pointer outside this function
-  if (out_buffer == NULL) 
-  {
-    fprintf(stderr, "NULL pointer passed to out_buffer\n");
-    return NULL; // or handle the error appropriately
-  }
-  out_buffer[0] = y[3]/gama - beta_w; // = beta_z - beta_w = dot_zeta
-  out_buffer[1] = y[4]/gama; // = beta_x
-  out_buffer[2] = y[5]/gama; // = beta_y
+  out_buffer[0] = y[3]/gamma - beta_w; // = beta_z - beta_w = dot_zeta
+  out_buffer[1] = y[4]/gamma; // = beta_x
+  out_buffer[2] = y[5]/gamma; // = beta_y
 
   // set pz dot and px dot equal to external forces first.
-  f_ext(y, out_buffer, out_buffer+3);//output bubble field in out_buffer index 3 to 5
-  //gamma_dot = dotProduct(y+3,out_buffer+3)/gama;
+  f_ext(y, out_buffer, out_buffer+3);
   double tmp_B_eff[3]; 
-  B_eff(y, out_buffer, gama, Omega_B,Omega_E,Omega_v,tmp_B_eff);
+  B_eff(y, out_buffer, Omega_B,Omega_E,Omega_v,tmp_B_eff);
   crossProduct(tmp_B_eff, y+6, out_buffer+6);
 
-  if(if_RR)//defined in main.c, have default value 'false' in input.cfg
+  if(if_RR)
   {
     int i;
-    //const int max_cycles = 3;
+    const int max_cycles = 3;
     double f_ext_save[3]={out_buffer[3],out_buffer[4],out_buffer[5]};
     double tmp_f_RR[3];
     double new_tmp_f_RR[3];
     double diff_tmp_f_RR[3];
-    f_rad(y+3,f_ext_save,gama,tmp_f_RR);//set tmp rr force with the external force only
-    for(i=0;i<max_cycles;i++)//迭代求解dp_over_dt
+    f_rad(y+3,f_ext_save,tmp_f_RR);//set tmp rr force with the external force only
+    for(i=0;i<max_cycles;i++)
       {
         //printf("In dy_over_dt, cycle i = %d\n",i);
         out_buffer[3] = f_ext_save[0] + tmp_f_RR[0] ;
         out_buffer[4] = f_ext_save[1] + tmp_f_RR[1] ;
         out_buffer[5] = f_ext_save[2] + tmp_f_RR[2] ;
       
-        f_rad(y+3,out_buffer+3,gama,new_tmp_f_RR);//calculate new tmp rr force
+        f_rad(y+3,out_buffer+3,new_tmp_f_RR);//calculate new tmp rr force
         diff_tmp_f_RR[0] = fabs(new_tmp_f_RR[0]-tmp_f_RR[0]);
         diff_tmp_f_RR[1] = fabs(new_tmp_f_RR[1]-tmp_f_RR[1]);
         diff_tmp_f_RR[2] = fabs(new_tmp_f_RR[2]-tmp_f_RR[2]);
-        if((diff_tmp_f_RR[0]<fabs(tmp_f_RR[0]*RelTol_RR) || diff_tmp_f_RR[0]<extreme_small_RR)
-          && (diff_tmp_f_RR[1]<fabs(tmp_f_RR[1]*RelTol_RR) || diff_tmp_f_RR[1]<extreme_small_RR)
-          && (diff_tmp_f_RR[2]<fabs(tmp_f_RR[2]*RelTol_RR) || diff_tmp_f_RR[2]<extreme_small_RR))
-          //Check if the change is negligible; if not, prepare for next loop;由于S-G力十分小，约为1.e-11,判断条件需要改变。
+        if((diff_tmp_f_RR[0]<fabs(tmp_f_RR[0]*RelTol) || diff_tmp_f_RR[0]<extreme_small_RR)
+          && (diff_tmp_f_RR[1]<fabs(tmp_f_RR[1]*RelTol) || diff_tmp_f_RR[1]<extreme_small_RR)
+          && (diff_tmp_f_RR[2]<fabs(tmp_f_RR[2]*RelTol) || diff_tmp_f_RR[2]<extreme_small_RR))
+          //Check if the change is negligible; if not, prepare for next loop
           break;
         //tmp_f_RR[0] = 0.618*new_tmp_f_RR[0]+0.382*tmp_f_RR[0];
         //tmp_f_RR[1] = 0.618*new_tmp_f_RR[1]+0.382*tmp_f_RR[0];
@@ -216,24 +195,18 @@ double * dy_over_dt ( double t, const double * y )
 void normalize_vector(double *vec, int size) 
 {
   double norm = 0.0;
-
-  // 计算模
   for (int i = 0; i < size; i++) 
   {
     norm += vec[i] * vec[i];
   }
-  norm = sqrt(norm); // 取模的平方根
-
-  // 检查模是否为零，避免除以零
+  norm = sqrt(norm); 
   if (norm == 0.0) 
   {
     printf("Warning: Zero vector cannot be normalized.\n");
-    return; // 或者可以返回特定的错误代码
-  }
-
-// 归一化向量
+    return; 
   for (int i = 0; i < size; i++) 
   {
     vec[i] = vec[i] / norm;
+  }
   }
 }

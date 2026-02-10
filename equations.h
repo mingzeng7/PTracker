@@ -6,7 +6,6 @@
 
 double dotProduct(const double a[3], const double b[3]);
 
-
 void crossProduct(const double a[3], const double b[3], double result[3]);
 
 double cube(double x);
@@ -29,7 +28,7 @@ void f_ext ( const double * x, const double * dot_x, double * f );
       f[2] is f^ext_y
 */
 
-void f_rad ( const double * p, const double * dp_over_dt, double gama,double * f );
+void f_rad ( const double * p, const double * dp_over_dt, double * f );
 /* Radiation reaction force. For 1st radiation term turned on (if_RR1=1), estimate d^2 p/dt^2 by d f^ext/dt.
    Input:
    p: momentum
@@ -41,7 +40,7 @@ void f_rad ( const double * p, const double * dp_over_dt, double gama,double * f
    Output:
    f: Pointer to an array of two doubles, containing the estimated radiation reactions.
 */
-void B_eff(const double * x, const double * p,double gama, double Omega_B, double Omega_E, double Omega_v, double * f);
+void B_eff(const double * x, const double * p, double Omega_B, double Omega_E, double Omega_v, double * f);
 
 double * dy_over_dt ( double t, const double * y );
 /* Create and set the array of dy_over_dt. Need to be released manually after using it. */

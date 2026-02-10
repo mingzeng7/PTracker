@@ -611,19 +611,7 @@ if __name__ == "__main__":
         sin_Delta_Phi = plotter.get_sin_Delta_Phi()
         
         
-        plt.rcParams.update({
-            'font.size': 28,  
-            'axes.titlesize': 32,  
-            'axes.labelsize': 32,  
-            'xtick.labelsize': 28,  
-            'ytick.labelsize': 28,  
-            'legend.fontsize': 28,  
-            'figure.titlesize': 34,  
-            'lines.linewidth': 3.0,  
-            'lines.markersize': 12,  
-            'axes.linewidth': 2.5,  
-            'grid.linewidth': 1.2,  
-            'mathtext.default': 'regular', 
+        plt.rcParams.update({  
             'mathtext.fontset': 'stix',  
             'font.family': 'serif',
             'font.serif': ['Times New Roman', 'STIXGeneral', 'DejaVu Serif'],
@@ -632,19 +620,6 @@ if __name__ == "__main__":
             'savefig.pad_inches': 0.02, 
             'figure.constrained_layout.use': False,  
         })
-
-        colors = {
-            'blue': '#1f77b4',
-            'orange': '#ff7f0e',
-            'green': '#2ca02c',
-            'red': '#d62728',
-            'purple': '#9467bd',
-            'brown': '#8c564b',
-            'pink': '#e377c2',
-            'gray': '#7f7f7f',
-            'yellow': '#bcbd22',
-            'cyan': '#17becf'
-        }
 
         # 1. comparison for s1z
         fig_s1z_time, ax_time_s1z = plt.subplots(figsize=(10, 7))  
@@ -657,8 +632,8 @@ if __name__ == "__main__":
         label_pt = plt.rcParams['axes.labelsize']
 
 
-
-        line2_s1z, = ax_time_s1z.plot(t, s1z_nume, color=colors['blue'], linewidth=1.2, alpha=0.5, label='Numerical')
+        line1_s1z, = ax_time_s1z.plot(t, s1z_theory_tm, 'red', linewidth=1.2, label='Theory')
+        line2_s1z, = ax_time_s1z.plot(t, s1z_nume, 'blue', linewidth=1.2, alpha=0.5, label='Numerical')
         ax_time_s1z.set_xlabel('$t$', fontsize=50, labelpad=8)  
         ax_time_s1z.set_ylabel('$s_{1_z}$', fontsize=50, labelpad=8)  
 
@@ -668,7 +643,6 @@ if __name__ == "__main__":
 
         ax_time_s1z.grid(True, alpha=0.3, linestyle='--')
         ax_time_s1z.tick_params(axis='both', which='major', width=2.0, length=10, labelsize=40, pad=6)  
-        ax_time_s1z.set_position([0.08, 0.10, 0.88, 0.85])  
         ax_time_s1z.legend([ line2_s1z], [ 'Numerical'],
                         loc='upper right', fontsize=40, frameon=True, framealpha=0.5,
                         edgecolor='black', fancybox=True,
@@ -691,8 +665,8 @@ if __name__ == "__main__":
         # 2. comparison for s1x
         fig_s1x_time, ax_time_s1x = plt.subplots(figsize=(10, 7))
 
-        line1_s1x, = ax_time_s1x.plot(t, s1x_theory_tm, color=colors['red'], linewidth=1.2, label='Theory')
-        line2_s1x, = ax_time_s1x.plot(t, s1x_nume, color=colors['blue'], linewidth=1.2, alpha=0.5, label='Numerical')
+        line1_s1x, = ax_time_s1x.plot(t, s1x_theory_tm, 'red', linewidth=1.2, label='Theory')
+        line2_s1x, = ax_time_s1x.plot(t, s1x_nume, 'blue', linewidth=1.2, alpha=0.5, label='Numerical')
         ax_time_s1x.set_xlabel('$t$', fontsize=50, labelpad=8)
         ax_time_s1x.set_ylabel('$s_{1_x}$', fontsize=50, labelpad=8)
 
@@ -701,11 +675,6 @@ if __name__ == "__main__":
 
         ax_time_s1x.grid(True, alpha=0.3, linestyle='--')
         ax_time_s1x.tick_params(axis='both', which='major', width=2.0, length=10, labelsize=40, pad=6)
-
-
-        ax_time_s1x.set_position([0.08, 0.10, 0.88, 0.85])
-
-
         ax_time_s1x.legend([line1_s1x, line2_s1x], ['Theory', 'Numerical'],
                         loc='upper right', fontsize=40, frameon=True, framealpha=0.5,
                         edgecolor='black', fancybox=True,
@@ -731,15 +700,15 @@ if __name__ == "__main__":
         ax1_separate = plt.gca()
 
 
-        line_sx, = ax1_separate.plot(t, sx, color=colors['blue'], linewidth=0.6, alpha=0.8, label='$s_x$')
-        line_sy, = ax1_separate.plot(t, sy, color=colors['red'], linewidth=0.6, alpha=0.8, label='$s_y$')
-        line_sz, = ax1_separate.plot(t, sz, color=colors['green'], linewidth=0.6, alpha=0.8, label='$s_z$')
+        line_sx, = ax1_separate.plot(t, sx, 'blue', linewidth=0.6, alpha=0.8, label='$s_x$')
+        line_sy, = ax1_separate.plot(t, sy, 'red', linewidth=0.6, alpha=0.8, label='$s_y$')
+        line_sz, = ax1_separate.plot(t, sz, 'green', linewidth=0.6, alpha=0.8, label='$s_z$')
         line_s0x_avg, = ax1_separate.plot(t_x_average, sx_average, color='cyan', linestyle='--', linewidth=2.0, label='$s_{0x}$ (avg)')
         line_s0y_avg, = ax1_separate.plot(t_y_average, sy_average, color='magenta', linestyle='--', linewidth=2.0, label='$s_{0y}$ (avg)')
         line_s0z_avg, = ax1_separate.plot(t_z_average, sz_average, color='blue', linestyle='--', linewidth=2.0, label='$s_{0z}$ (avg)')
-        line_s0x_th, = ax1_separate.plot(t_trace, sx0_tm, color=colors['orange'], linewidth=2.0, label='$s_{0x}$ (theory)')
-        line_s0y_th, = ax1_separate.plot(t_trace, sy0_tm, color=colors['purple'], linewidth=2.0, label='$s_{0y}$ (theory)')
-        line_s0z_th, = ax1_separate.plot(t_trace, sz0_tm, color=colors['brown'], linewidth=2.0, label='$s_{0z}$ (theory)')
+        line_s0x_th, = ax1_separate.plot(t_trace, sx0_tm, 'orange', linewidth=2.0, label='$s_{0x}$ (theory)')
+        line_s0y_th, = ax1_separate.plot(t_trace, sy0_tm, 'purple', linewidth=2.0, label='$s_{0y}$ (theory)')
+        line_s0z_th, = ax1_separate.plot(t_trace, sz0_tm, 'brown', linewidth=2.0, label='$s_{0z}$ (theory)')
 
         ax1_separate.set_xlabel('$t$', fontsize=32, labelpad=8)
         ax1_separate.set_ylabel('Spin Components', fontsize=32, labelpad=8)
@@ -749,9 +718,9 @@ if __name__ == "__main__":
         ax1_separate.tick_params(axis='both', which='major', width=2.0, length=10, labelsize=28, pad=6)
 
         ax1_twin = ax1_separate.twinx()
-        line_lz, = ax1_twin.plot(t_trace, y_rk4[:,2], color=colors['cyan'], linestyle='--', linewidth=2.0, alpha=0.8, label='$L_z$')
-        ax1_twin.set_ylabel('$L_z$', fontsize=32, color=colors['cyan'], labelpad=8)
-        ax1_twin.tick_params(axis='y', labelcolor=colors['cyan'], labelsize=28, width=2.0, length=10, pad=6)
+        line_lz, = ax1_twin.plot(t_trace, y_rk4[:,2], color='cyan', linestyle='--', linewidth=2.0, alpha=0.8, label='$L_z$')
+        ax1_twin.set_ylabel('$L_z$', fontsize=32, color='cyan', labelpad=8)
+        ax1_twin.tick_params(axis='y', labelcolor='cyan', labelsize=28, width=2.0, length=10, pad=6)
         leg = ax1_separate.legend(loc='upper right', fontsize=22, frameon=True, framealpha=0.5,
                                 edgecolor='black', fancybox=True, ncol=3,  
                                 bbox_to_anchor=(0.82, -0.17),  

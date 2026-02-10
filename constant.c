@@ -16,9 +16,6 @@ const unsigned int	default_seed = 0;
 const int	default_if_RR = 1;
 const int	default_if_RR1 = 1;
 const int	default_if_RR2 = 1;
-
-
-
 const double	re_SI = 2.8179403262e-15;
 const double	default_kp_SI = 1.e5;
 const double	default_gamma_w = 1.e4;

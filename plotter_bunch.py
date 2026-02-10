@@ -218,7 +218,7 @@ class BunchAnalyzer:
             Px_current = np.mean(Px_0*cos_terms - Py_0*sin_terms)
             Py_current = np.mean(Px_0*sin_terms + Py_0*cos_terms)
             
-            theoretical_polarization[i] = np.sqrt(Px_current**2 + Py_current**2 + Pz_0**2)
+            theoretical_polarization[i] = np.sqrt(Px_current**2 + Py_current**2 )
         
         return theoretical_polarization
     
@@ -268,8 +268,7 @@ class BunchAnalyzer:
             # Calculate spin polarization
             polarization_chunk = np.sqrt(
                 mean_sx_chunk**2 + 
-                mean_sy_chunk**2 + 
-                mean_sz_chunk**2
+                mean_sy_chunk**2 
             )
             
             # Ensure shape matches
@@ -340,15 +339,14 @@ class BunchAnalyzer:
         print("Plotting polarization comparison...")
         
         # Set large font style
-        plt.rcParams.update({
-            'font.size': 40,
+        plt.rcParams.update({  
+            'mathtext.fontset': 'stix',  
             'font.family': 'serif',
-            'mathtext.fontset': 'stix',
-            'axes.labelsize': 40,
-            'axes.titlesize': 40,
-            'legend.fontsize': 40,
-            'xtick.labelsize': 40,
-            'ytick.labelsize': 40
+            'font.serif': ['Times New Roman', 'STIXGeneral', 'DejaVu Serif'],
+            'savefig.dpi': 600, 
+            'savefig.bbox': 'tight',
+            'savefig.pad_inches': 0.02, 
+            'figure.constrained_layout.use': False,  
         })
         
         # Create figure - using square size
@@ -356,7 +354,7 @@ class BunchAnalyzer:
         
         # Plot polarization evolution comparison
         line1 = ax.plot(beam_params['time'], beam_params['polarization'], 
-                color='#1f77b4', linewidth=3, label='P (numerical)')[0]
+                'blue', linewidth=3, label='P (numerical)')[0]
         line2 = ax.plot(beam_params['time'], theoretical_polarization, 
                 'red', linewidth=3, linestyle='--', 
                 label='P (theory)')[0]
@@ -367,8 +365,8 @@ class BunchAnalyzer:
                 color='green', linewidth=3, label=r'$\gamma$')[0]
         
         # Set axis labels
-        ax.set_xlabel('t', fontsize=40)
-        ax.set_ylabel('P', fontsize=40)
+        ax.set_xlabel('$t$', fontsize=40)
+        ax.set_ylabel('$P_\perp$', fontsize=40)
         ax_twin.set_ylabel(r'$\gamma$', fontsize=40)
         
         # Set x-axis to scientific notation

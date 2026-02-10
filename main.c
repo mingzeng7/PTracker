@@ -18,22 +18,7 @@ double kappa_square_lambda; // = kappa_square * lambda
 double h_bar_over_2;//normalized h_bar/2
 
 // Gaussian random particle generation
-double gaussian_rand(double mean, double stddev) {
-    static double u, v;
-    static int phase = 0;
-    double z;
-    
-    if (phase == 0) {
-        u = (rand() + 1.0) / (RAND_MAX + 2.0);
-        v = rand() / (RAND_MAX + 1.0);
-        z = sqrt(-2.0 * log(u)) * cos(2.0 * M_PI * v);
-    } else {
-        z = sqrt(-2.0 * log(u)) * sin(2.0 * M_PI * v);
-    }
-    
-    phase = 1 - phase;
-    return mean + stddev * z;
-}
+
 double gaussian_rand_threadsafe(double mean, double stddev, unsigned int *seed) {
     double u, v, z;
     
@@ -44,9 +29,6 @@ double gaussian_rand_threadsafe(double mean, double stddev, unsigned int *seed) 
     return mean + stddev * z;
 }
 // Uniform random generation of particles
-double uniform_rand(double min, double max) {
-    return min + (max - min) * (rand() / (double)RAND_MAX);
-}
 
 double uniform_rand_threadsafe(double min, double max, unsigned int *seed) {
     return min + (max - min) * (rand_r(seed) / (double)RAND_MAX);
@@ -78,7 +60,7 @@ int main(int argc, char **argv)
     return(EXIT_FAILURE);
   }
 
-  //Read and set if_RR，constant.c stores default values for some parameters, which can be modified through input.cfg
+  //Read and set if_RR
   if(config_lookup_bool(&cfg, "if_RR", &if_RR))
   {
     printf("if_RR =  %d\n", if_RR);
@@ -89,7 +71,6 @@ int main(int argc, char **argv)
     printf("if_RR =  %d using the default value!\n", if_RR);
   }
 
-  
   //Read and set if_RR1
   if(config_lookup_bool(&cfg, "if_RR1", &if_RR1))
   {
@@ -111,7 +92,6 @@ int main(int argc, char **argv)
     if_RR2 = default_if_RR2;
     printf("if_RR2 =  %d using the default value!\n", if_RR2);
   }
-
 
   //Read kp and set re and h_bar
   double kp_SI;
@@ -222,7 +202,6 @@ int main(int argc, char **argv)
   }
   
   //printf("random numbers %d, %d, %d, %d\n",rand(),rand(),rand(),rand());
-
   /* Get the output file name. */
   if(config_lookup_string(&cfg, "output_file", &output_file))
   {
@@ -233,7 +212,7 @@ int main(int argc, char **argv)
     output_file = default_output_file;
     printf("No 'output_file' specified. Use %s as a default!\n",output_file);
   }
-  //Set program start and end times
+  
   double t0;
   double t1;
   if(config_lookup_float(&cfg, "t0",&t0))
@@ -320,31 +299,18 @@ int main(int argc, char **argv)
           
           double r_omega_beta = sqrt(gamma0/kappa_square); // 1 over Betatron oscillation frequency
           printf("Start to track particle #%d: x_1 = %f, y_1 = %f, gamma0 = %f\n", i, x_1, y_1, gamma0);
-          double dt = 2*M_PI*r_omega_beta/sampling_factor;
+          double dt = r_omega_beta/sampling_factor;
           fprintf(stdout,"dt = %f\n", dt);
           int track_arry_lenth = ((int) (t_duration / dt))+1;
           fprintf(stdout,"track_arry_lenth =  %d\n", track_arry_lenth);
           double * buffer;
-          
           int column_length = 10; // The columns are t, zeta, x, y, pz, px, py sz,sx,sy,
           hsize_t * dims;
           dims=(hsize_t *)malloc(2*sizeof *dims);
-          if (dims == NULL)
-          {
-            fprintf( stderr, "NULL pointer passed to dims\n");
-        
-            return EXIT_FAILURE;
-          }
           dims[0]=track_arry_lenth;
           dims[1]=column_length;
 
           buffer = (double*)malloc(dims[1]*dims[0]*sizeof *buffer);
-          if (buffer == NULL)
-          {
-            fprintf( stderr,"NULL pointer passed to buffer\n");
-            
-            return EXIT_FAILURE;
-          }
           buffer[0] = t0;
 
           // Get intial phase of the oscillation
@@ -392,7 +358,7 @@ int main(int argc, char **argv)
             phi0 = 0.;
           }
           // The intial betatron oscillation follows
-          // zeta = zeta0 - (x * beta_x + y * beta_y)/4, zeta0也就是平均化的zeta
+          // zeta = zeta0 - (x * beta_x + y * beta_y)/4,
           // x = x_1 * cos (omega_beta * t + phase0_x)
           // y = y_1 * cos (omega_beta * t + phase0_y)
           // beta_x = -omega_beta * x_1 * sin (omega_beta * t + phase0_x)
@@ -405,8 +371,6 @@ int main(int argc, char **argv)
             fprintf(stdout,"Particle # %d zeta0 = %f\n", i, zeta0);
           else
             fprintf(stderr,"Particle # %d zeta0 not given!\n", i);
-          
-          //Set the initial state of particles
           // Set buffer[1] to be initial value of zeta = zeta0 - 0.25*(x*beta_x + y*beta_y)
           buffer[1] = zeta0 + (Square(x_1)*sin(phase0_x*2)+Square(y_1)*sin(phase0_y*2))/r_omega_beta/8;
 
@@ -421,7 +385,7 @@ int main(int argc, char **argv)
           // Set buffer[4] to be initial value of pz
           // For precise initial value we need beta_z0
           double beta_z0 = 1. - 0.5*(1./Square(gamma0) + 0.5*kappa_square/gamma0*(Square(x_1)+Square(y_1)));
-          // gama = gamma0 + 0.5*(kappa_square*(1.-lambda) - lambda*beta_z0*0.25) * ((Square(x_1) + Square(y_1))/2 - Square(buffer[2])-Square(buffer[3]))
+          // gamma = gamma0 + 0.5*(kappa_square*(1.-lambda) - lambda*beta_z0*0.25) * ((Square(x_1) + Square(y_1))/2 - Square(buffer[2])-Square(buffer[3]))
           buffer[4] = sqrt(Square(gamma0 + 0.5*(kappa_square*(1.-lambda) - lambda*beta_z0*0.25) * ((Square(x_1) + Square(y_1))/2 - Square(buffer[2])-Square(buffer[3])))-1.-Square(buffer[5])-Square(buffer[6]));
           //Set buffer[7] to be initial value of sz
           buffer[7] = s0 * cos(theta0);
@@ -437,23 +401,15 @@ int main(int argc, char **argv)
             int this_row_start_index = j*column_length;
             buffer[this_row_start_index] = buffer[pre_row_start_index] + dt;
             int opt = rk4vec ( buffer[pre_row_start_index], column_length-1, buffer+pre_row_start_index+1, buffer+this_row_start_index+1, dt, dy_over_dt );
-            if(opt == -1)
-            {
-              fprintf(stderr, "Error occurred in rk4vec\n");
-              return EXIT_FAILURE;
-            }
           }
           sprintf(i_str, "%d", i);
           h5status = H5LTmake_dataset_double (ofile_h5id, i_str, 2, dims ,(const double*)buffer);
           free(buffer);
           free(dims);
-          buffer = NULL;
-          dims = NULL;
-
         }
       }
       break;
-    case 1: // Multi-particle bunch mode with batch processing to save memory
+    case 1: // Multi-particle bunch mode
       {
           printf("Multi-particle bunch mode selected (batch processing to save memory).\n");
           
