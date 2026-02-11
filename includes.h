@@ -24,4 +24,5 @@ extern double f_z0;
 extern double kappa_square;
 extern double lambda;
 extern double kappa_square_lambda;
+extern double h_bar_over_2;
 #endif /* ifndef __INCLUDES_H */

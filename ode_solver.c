@@ -1,4 +1,5 @@
 #include "ode_solver.h"
+#include "includes.h"
 
 /******************************************************************************/
 
@@ -85,6 +86,7 @@ int rk4vec ( double t0, int m, const double * u0, double * u, double dt,
   {
     u2[i] = u0[i] + dt * f1[i] / 2.0;
   }
+
   f2 = f ( t2, u2 );
 
   t3 = t0 + dt;
